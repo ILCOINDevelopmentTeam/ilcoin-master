@@ -1,82 +1,25 @@
-Ilcoin Core integration/staging tree
+ILCoin Core integration
 =====================================
 
-[![Build Status](https://travis-ci.org/ilcoin/ilcoin.svg?branch=master)](https://travis-ci.org/ilcoin/ilcoin)
 
-https://ilcoincore.org
 
-What is Ilcoin?
+https://ilcoincrypto.com/#/
+
+What is ILCoin?
 ----------------
 
-Ilcoin is an experimental digital currency that enables instant payments to
-anyone, anywhere in the world. Ilcoin uses peer-to-peer technology to operate
-with no central authority: managing transactions and issuing money are carried
-out collectively by the network. Ilcoin Core is the name of open source
-software which enables the use of this currency.
+ILCoin is a modern alternative to Bitcoin developed by the ILCoin Dev Team. We use SHA-256 encryption technology and C2P Protocol. ILCoin has been launched and is mined by a young and dynamic start-up company, committed to build and develop a global digital currency-based economic system and community, ILCoin Development Team.
 
-For more information, as well as an immediately useable, binary version of
-the Ilcoin Core software, see https://ilcoin.org/en/download, or read the
-[original whitepaper](https://ilcoincore.org/ilcoin.pdf).
+With long-time programming knowledge for each of our representatives, we are intended to achieve improvements in this cutting-edge technology which is the cryptocurrency world. Every day look for ways to update with better security and connectivity in every node, wallet and the blockchain itself.
+
+ILCoin Dev Team create a new protocol called C2P, this protocol allows to prevent one of the biggest concerns of the cryptocurrency world, which is the 51% attack.
+Our protocol has 3 new levels of security to prevent attacks or corruption
+in the blockchain, and in this way avoid every malicious activities. Also, we increment our max block size up to 25 MB according to the necessities and demand of all the crypto community therefore prevent the bottleneck issue.
+
+
+[original whitepaper](https://ilcoincrypto.com/img/media/ILCOIN_WhitePaper_1010.pdf).
 
 License
 -------
 
-Ilcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
-information or see https://opensource.org/licenses/MIT.
-
-Development Process
--------------------
-
-The `master` branch is regularly built and tested, but is not guaranteed to be
-completely stable. [Tags](https://github.com/ilcoin/ilcoin/tags) are created
-regularly to indicate new official, stable release versions of Ilcoin Core.
-
-The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
-
-The developer [mailing list](https://lists.linuxfoundation.org/mailman/listinfo/ilcoin-dev)
-should be used to discuss complicated or controversial changes before working
-on a patch set.
-
-Developer IRC can be found on Freenode at #ilcoin-core-dev.
-
-Testing
--------
-
-Testing and code review is the bottleneck for development; we get more pull
-requests than we can review and test on short notice. Please be patient and help out by testing
-other people's pull requests, and remember this is a security-critical project where any mistake might cost people
-lots of money.
-
-### Automated Testing
-
-Developers are strongly encouraged to write [unit tests](src/test/README.md) for new code, and to
-submit new unit tests for old code. Unit tests can be compiled and run
-(assuming they weren't disabled in configure) with: `make check`. Further details on running
-and extending unit tests can be found in [/src/test/README.md](/src/test/README.md).
-
-There are also [regression and integration tests](/qa) of the RPC interface, written
-in Python, that are run automatically on the build server.
-These tests can be run (if the [test dependencies](/qa) are installed) with: `qa/pull-tester/rpc-tests.py`
-
-The Travis CI system makes sure that every pull request is built for Windows, Linux, and OS X, and that unit/sanity tests are run automatically.
-
-### Manual Quality Assurance (QA) Testing
-
-Changes should be tested by somebody other than the developer who wrote the
-code. This is especially important for large or high-risk changes. It is useful
-to add a test plan to the pull request description if testing the changes is
-not straightforward.
-
-Translations
-------------
-
-Changes to translations as well as new translations can be submitted to
-[Ilcoin Core's Transifex page](https://www.transifex.com/projects/p/ilcoin/).
-
-Translations are periodically pulled from Transifex and merged into the git repository. See the
-[translation process](doc/translation_process.md) for details on how this works.
-
-**Important**: We do not accept translation changes as GitHub pull requests because the next
-pull from Transifex would automatically overwrite them again.
-
-Translators should also subscribe to the [mailing list](https://groups.google.com/forum/#!forum/ilcoin-translators).
+ILCoin Core is released under the terms of the Development Team.
