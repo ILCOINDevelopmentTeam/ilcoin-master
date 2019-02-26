@@ -1,0 +1,67 @@
+Source: ilcoin
+Section: utils
+Priority: optional
+Maintainer: Jonas Smedegaard <dr@jones.dk>
+Uploaders: Micah Anderson <micah@debian.org>
+Build-Depends: debhelper,
+ devscripts,
+ automake,
+ libtool,
+ bash-completion,
+ libboost-system-dev (>> 1.35) | libboost-system1.35-dev,
+ libdb4.8++-dev,
+ libssl-dev,
+ pkg-config,
+ libminiupnpc8-dev | libminiupnpc-dev (>> 1.6),
+ libboost-filesystem-dev (>> 1.35) | libboost-filesystem1.35-dev,
+ libboost-program-options-dev (>> 1.35) | libboost-program-options1.35-dev,
+ libboost-thread-dev (>> 1.35) | libboost-thread1.35-dev,
+ libboost-test-dev (>> 1.35) | libboost-test1.35-dev,
+ qt4-qmake,
+ libqt4-dev,
+ libqrencode-dev,
+ libprotobuf-dev, protobuf-compiler,
+ python
+Standards-Version: 3.9.2
+Homepage: https://ilcoincore.org/
+Vcs-Git: git://github.com/ilcoin/ilcoin.git
+Vcs-Browser: https://github.com/ilcoin/ilcoin
+
+Package: ilcoind
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: peer-to-peer network based digital currency - daemon
+ Ilcoin is an experimental new digital currency that enables instant
+ payments to anyone, anywhere in the world. Ilcoin uses peer-to-peer
+ technology to operate with no central authority: managing transactions
+ and issuing money are carried out collectively by the network. Ilcoin Core
+ is the name of the open source software which enables the use of this currency.
+ .
+ This package provides the daemon, ilcoind, and the CLI tool
+ ilcoin-cli to interact with the daemon.
+
+Package: ilcoin-qt
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: peer-to-peer network based digital currency - Qt GUI
+ Ilcoin is an experimental new digital currency that enables instant
+ payments to anyone, anywhere in the world. Ilcoin uses peer-to-peer
+ technology to operate with no central authority: managing transactions
+ and issuing money are carried out collectively by the network. Ilcoin Core
+ is the name of the open source software which enables the use of this currency.
+ .
+ This package provides Ilcoin-Qt, a GUI for Ilcoin based on Qt.
+
+Package: ilcoin-tx
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: peer-to-peer digital currency - standalone transaction tool
+ Ilcoin is an experimental new digital currency that enables instant
+ payments to anyone, anywhere in the world. Ilcoin uses peer-to-peer
+ technology to operate with no central authority: managing transactions
+ and issuing money are carried out collectively by the network. Ilcoin Core
+ is the name of the open source software which enables the use of this currency.
+ .
+ This package provides ilcoin-tx, a command-line transaction creation
+ tool which can be used without a ilcoin daemon.  Some means of
+ exchanging minimal transaction data with peers is still required.

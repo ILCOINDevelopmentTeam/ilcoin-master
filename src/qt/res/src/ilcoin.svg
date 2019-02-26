@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1"
+	 id="svg2" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:svg="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#" inkscape:version="0.48.2 r9819" sodipodi:docname="ilcoin-logo-noshadow.svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="1024px" height="1024px"
+	 viewBox="0 0 1024 1024" enable-background="new 0 0 1024 1024" xml:space="preserve">
+<filter  id="dropShadowAlpha">
+	<feColorMatrix  result="matrixOut" in="SourceAlpha" values="0.1" type="saturate"></feColorMatrix>
+	<feGaussianBlur  result="blur-out" in="matrixOut" stdDeviation="6"></feGaussianBlur>
+	
+		<feColorMatrix  result="color-out" in="blur-out" values="0 0 0 0   0                 0 0 0 0   0                  0 0 0 0   0                  0 0 0 0.35 0" type="matrix">
+		</feColorMatrix>
+	<feBlend  in="SourceGraphic" mode="normal" in2="color-out"></feBlend>
+</filter>
+<g>
+	<circle fill="#FFFFFF" cx="476.234" cy="476.234" r="353.104"/>
+	<g filter="url(#dropShadowAlpha)">
+		
+			<radialGradient id="SVGID_1_" cx="366.9766" cy="778.0449" r="34.4327" gradientTransform="matrix(1.7655 0 0 -1.7655 -132.0522 1746.4995)" gradientUnits="userSpaceOnUse">
+			<stop  offset="0" style="stop-color:#F9AA4B"/>
+			<stop  offset="1" style="stop-color:#F7931A"/>
+		</radialGradient>
+		<path fill="url(#SVGID_1_)" d="M475.611,334.287l-24.688,99.01c27.992,6.976,114.291,35.436,128.275-20.579
+			C593.762,354.287,503.605,341.264,475.611,334.287z"/>
+	</g>
+	<g filter="url(#dropShadowAlpha)">
+		
+			<radialGradient id="SVGID_2_" cx="351.4004" cy="689.9189" r="39.8736" gradientTransform="matrix(1.7655 0 0 -1.7655 -132.0522 1746.4995)" gradientUnits="userSpaceOnUse">
+			<stop  offset="0" style="stop-color:#F9AA4B"/>
+			<stop  offset="1" style="stop-color:#F7931A"/>
+		</radialGradient>
+		<path fill="url(#SVGID_2_)" d="M438.467,483.269l-27.233,109.165c33.615,8.35,137.303,41.638,152.625-19.943
+			C579.876,508.268,472.08,491.658,438.467,483.269z"/>
+	</g>
+	
+		<radialGradient id="SVGID_3_" cx="345.5137" cy="718.4883" r="255.9878" gradientTransform="matrix(1.7655 0 0 -1.7655 -132.0522 1746.4995)" gradientUnits="userSpaceOnUse">
+		<stop  offset="0" style="stop-color:#F9AA4B"/>
+		<stop  offset="1" style="stop-color:#F7931A"/>
+	</radialGradient>
+	<path fill="url(#SVGID_3_)" d="M587.234,39.544C345.146-20.822,99.909,126.549,39.571,368.708
+		c-60.395,242.116,86.962,487.368,329.022,547.734c242.158,60.379,487.394-86.979,547.763-329.106
+		C976.722,345.191,829.379,99.911,587.234,39.544z M677.163,413.608c-6.512,44.024-30.918,65.338-63.319,72.81
+		c44.491,23.164,67.133,58.684,45.566,120.267c-26.765,76.48-90.352,82.938-174.913,66.935l-20.522,82.245l-49.59-12.358
+		l20.254-81.144c-12.851-3.193-25.988-6.584-39.52-10.256l-20.324,81.526l-49.533-12.358l20.522-82.402
+		c-11.584-2.966-23.35-6.115-35.353-9.124l-64.534-16.086l24.617-56.765c0,0,36.539,9.718,36.045,8.997
+		c14.039,3.477,20.268-5.678,22.726-11.779l32.429-130.013l0.085-0.354l23.136-92.81c0.607-10.537-3.022-23.827-23.107-28.841
+		c0.775-0.523-36.017-8.955-36.017-8.955l13.192-52.965l68.389,17.078l-0.057,0.254c10.282,2.557,20.876,4.986,31.668,7.443
+		l20.323-81.441l49.562,12.358l-19.915,79.844c13.305,3.039,26.694,6.102,39.731,9.352l19.773-79.323l49.59,12.358l-20.311,81.47
+		C640.369,321.137,686.161,353.467,677.163,413.608z"/>
+</g>
+<image overflow="visible" width="1024" height="1024" xlink:href="../icons/ilcoin.png"  transform="matrix(1.2437 0 0 1.2034 -148.4194 -138.1367)">
+</image>
+</svg>

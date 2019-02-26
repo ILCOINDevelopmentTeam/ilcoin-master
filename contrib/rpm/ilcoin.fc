@@ -1,0 +1,8 @@
+/usr/bin/ilcoin-cli		--	gen_context(system_u:object_r:ilcoin_exec_t,s0)
+/usr/sbin/ilcoind		--	gen_context(system_u:object_r:ilcoin_exec_t,s0)
+/usr/lib(64)?/ilcoin/ilcoind		--	gen_context(system_u:object_r:ilcoin_exec_t,s0)
+
+/etc/ilcoin(/.*)?		gen_context(system_u:object_r:ilcoin_conf_t,s0)
+/var/lib/ilcoin(/.*)?		gen_context(system_u:object_r:ilcoin_var_lib_t,s0)
+
+(/var)?/run/ilcoind(/.*)?   gen_context(system_u:object_r:ilcoin_var_run_t,s0)

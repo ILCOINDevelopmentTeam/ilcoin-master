@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=Ilcoin Core
+Comment=Connect to the Ilcoin P2P Network
+Comment[de]=Verbinde mit dem Ilcoin peer-to-peer Netzwerk
+Comment[fr]=Ilcoin, monnaie virtuelle cryptographique pair à pair
+Comment[tr]=Ilcoin, eşten eşe kriptografik sanal para birimi
+Exec=ilcoin-qt %u
+Terminal=false
+Type=Application
+Icon=ilcoin128
+MimeType=x-scheme-handler/ilcoin;
+Categories=Office;Finance;

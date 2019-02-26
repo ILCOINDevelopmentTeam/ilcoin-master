@@ -1,0 +1,6 @@
+usr/local/bin/ilcoin-qt usr/bin
+share/pixmaps/ilcoin32.xpm usr/share/pixmaps
+share/pixmaps/ilcoin16.xpm usr/share/pixmaps
+share/pixmaps/ilcoin128.png usr/share/pixmaps
+debian/ilcoin-qt.desktop usr/share/applications
+debian/ilcoin-qt.protocol usr/share/kde4/services/

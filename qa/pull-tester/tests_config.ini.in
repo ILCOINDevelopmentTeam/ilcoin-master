@@ -1,0 +1,17 @@
+# Copyright (c) 2013-2016 The Ilcoin Core developers
+# All Rights Reserved. Ilgamos International 2017©
+
+# These environment variables are set by the build process and read by
+# rpc-tests.py
+
+[environment]
+SRCDIR=@abs_top_srcdir@
+BUILDDIR=@abs_top_builddir@
+EXEEXT=@EXEEXT@
+
+[components]
+# Which components are enabled. These are commented out by `configure` if they were disabled when running config.
+@ENABLE_WALLET_TRUE@ENABLE_WALLET=true
+@BUILD_ILCOIN_UTILS_TRUE@ENABLE_UTILS=true
+@BUILD_ILCOIND_TRUE@ENABLE_ILCOIND=true
+@ENABLE_ZMQ_TRUE@ENABLE_ZMQ=true

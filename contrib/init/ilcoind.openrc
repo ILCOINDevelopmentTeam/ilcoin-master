@@ -1,0 +1,92 @@
+#!/sbin/runscript
+
+# backward compatibility for existing gentoo layout 
+#
+if [ -d "/var/lib/ilcoin/.ilcoin" ]; then
+	ILCOIND_DEFAULT_DATADIR="/var/lib/ilcoin/.ilcoin"
+else
+	ILCOIND_DEFAULT_DATADIR="/var/lib/ilcoind"
+fi
+
+ILCOIND_CONFIGFILE=${ILCOIND_CONFIGFILE:-/etc/ilcoin/ilcoin.conf}
+ILCOIND_PIDDIR=${ILCOIND_PIDDIR:-/var/run/ilcoind}
+ILCOIND_PIDFILE=${ILCOIND_PIDFILE:-${ILCOIND_PIDDIR}/ilcoind.pid}
+ILCOIND_DATADIR=${ILCOIND_DATADIR:-${ILCOIND_DEFAULT_DATADIR}}
+ILCOIND_USER=${ILCOIND_USER:-${ILCOIN_USER:-ilcoin}}
+ILCOIND_GROUP=${ILCOIND_GROUP:-ilcoin}
+ILCOIND_BIN=${ILCOIND_BIN:-/usr/bin/ilcoind}
+ILCOIND_NICE=${ILCOIND_NICE:-${NICELEVEL:-0}}
+ILCOIND_OPTS="${ILCOIND_OPTS:-${ILCOIN_OPTS}}"
+
+name="Ilcoin Core Daemon"
+description="Ilcoin cryptocurrency P2P network daemon"
+
+command="/usr/bin/ilcoind"
+command_args="-pid=\"${ILCOIND_PIDFILE}\" \
+		-conf=\"${ILCOIND_CONFIGFILE}\" \
+		-datadir=\"${ILCOIND_DATADIR}\" \
+		-daemon \
+		${ILCOIND_OPTS}"
+
+required_files="${ILCOIND_CONFIGFILE}"
+start_stop_daemon_args="-u ${ILCOIND_USER} \
+			-N ${ILCOIND_NICE} -w 2000"
+pidfile="${ILCOIND_PIDFILE}"
+
+# The retry schedule to use when stopping the daemon. Could be either
+# a timeout in seconds or multiple signal/timeout pairs (like
+# "SIGKILL/180 SIGTERM/300")
+retry="${ILCOIND_SIGTERM_TIMEOUT}"
+
+depend() {
+	need localmount net
+}
+
+# verify
+# 1) that the datadir exists and is writable (or create it)
+# 2) that a directory for the pid exists and is writable
+# 3) ownership and permissions on the config file
+start_pre() {
+	checkpath \
+	-d \
+	--mode 0750 \
+	--owner "${ILCOIND_USER}:${ILCOIND_GROUP}" \
+	"${ILCOIND_DATADIR}"
+
+	checkpath \
+	-d \
+	--mode 0755 \
+	--owner "${ILCOIND_USER}:${ILCOIND_GROUP}" \
+	"${ILCOIND_PIDDIR}"
+
+	checkpath -f \
+	-o ${ILCOIND_USER}:${ILCOIND_GROUP} \
+	-m 0660 \
+	${ILCOIND_CONFIGFILE}
+
+	checkconfig || return 1
+}
+
+checkconfig()
+{
+	if ! grep -qs '^rpcpassword=' "${ILCOIND_CONFIGFILE}" ; then
+		eerror ""
+		eerror "ERROR: You must set a secure rpcpassword to run ilcoind."
+		eerror "The setting must appear in ${ILCOIND_CONFIGFILE}"
+		eerror ""
+		eerror "This password is security critical to securing wallets "
+		eerror "and must not be the same as the rpcuser setting."
+		eerror "You can generate a suitable random password using the following"
+		eerror "command from the shell:"
+		eerror ""
+		eerror "bash -c 'tr -dc a-zA-Z0-9 < /dev/urandom | head -c32 && echo'"
+		eerror ""
+		eerror "It is also recommended that you also set alertnotify so you are "
+		eerror "notified of problems:"
+		eerror ""
+		eerror "ie: alertnotify=echo %%s | mail -s \"Ilcoin Alert\"" \
+			"admin@foo.com"
+		eerror ""
+		return 1
+	fi
+}

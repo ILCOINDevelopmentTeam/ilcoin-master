@@ -1,0 +1,81 @@
+policy_module(ilcoin, 1.100.1)
+
+########################################
+#
+# Declarations
+#
+
+type ilcoin_t;
+type ilcoin_exec_t;
+init_daemon_domain(ilcoin_t, ilcoin_exec_t)
+
+permissive ilcoin_t;
+
+type ilcoin_initrc_exec_t;
+init_script_file(ilcoin_initrc_exec_t)
+
+type ilcoin_conf_t;
+files_type(ilcoin_conf_t)
+
+type ilcoin_var_lib_t;
+files_type(ilcoin_var_lib_t)
+
+type ilcoin_var_run_t;
+files_type(ilcoin_var_run_t)
+
+type ilcoin_port_t;
+corenet_port(ilcoin_port_t)
+
+########################################
+#
+# ilcoin local policy
+#
+allow ilcoin_t self:process { fork };
+
+allow ilcoin_t self:fifo_file rw_fifo_file_perms;
+allow ilcoin_t self:unix_stream_socket create_stream_socket_perms;
+
+manage_dirs_pattern(ilcoin_t, ilcoin_conf_t, ilcoin_conf_t)
+manage_files_pattern(ilcoin_t, ilcoin_conf_t, ilcoin_conf_t)
+
+manage_dirs_pattern(ilcoin_t, ilcoin_var_lib_t, ilcoin_var_lib_t)
+manage_files_pattern(ilcoin_t, ilcoin_var_lib_t, ilcoin_var_lib_t)
+files_var_lib_filetrans(ilcoin_t, ilcoin_var_lib_t, { dir file })
+
+manage_dirs_pattern(ilcoin_t, ilcoin_var_run_t, ilcoin_var_run_t)
+manage_files_pattern(ilcoin_t, ilcoin_var_run_t, ilcoin_var_run_t)
+
+sysnet_dns_name_resolve(ilcoin_t)
+corenet_all_recvfrom_unlabeled(ilcoin_t)
+
+allow ilcoin_t self:tcp_socket create_stream_socket_perms;
+corenet_tcp_sendrecv_generic_if(ilcoin_t)
+corenet_tcp_sendrecv_generic_node(ilcoin_t)
+corenet_tcp_sendrecv_all_ports(ilcoin_t)
+corenet_tcp_bind_generic_node(ilcoin_t)
+
+gen_require(`
+    type ilcoin_port_t;
+')
+allow ilcoin_t ilcoin_port_t:tcp_socket name_bind;
+
+gen_require(`
+    type ilcoin_port_t;
+')
+allow ilcoin_t ilcoin_port_t:tcp_socket name_connect;
+
+domain_use_interactive_fds(ilcoin_t)
+
+files_read_etc_files(ilcoin_t)
+
+miscfiles_read_localization(ilcoin_t)
+
+sysnet_dns_name_resolve(ilcoin_t)
+
+allow ilcoin_t ilcoin_exec_t:file execute_no_trans;
+allow ilcoin_t self:process setsched;
+corecmd_exec_ls(ilcoin_t)
+corenet_tcp_connect_http_port(ilcoin_t)
+dev_read_urand(ilcoin_t)
+fs_getattr_xattr_fs(ilcoin_t)
+kernel_read_system_state(ilcoin_t)
