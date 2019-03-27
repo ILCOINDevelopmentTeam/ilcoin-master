@@ -17,7 +17,9 @@ Our protocol has 3 new levels of security to prevent attacks or corruption
 in the blockchain, and in this way avoid every malicious activities. Also, we increment our max block size up to 25 MB according to the necessities and demand of all the crypto community therefore prevent the bottleneck issue.
 
 
-[original whitepaper](https://ilcoincrypto.com/img/media/ILCOIN_WhitePaper_1010.pdf).
+[Original Whitepaper](https://ilcoincrypto.com/img/media/ILCOIN_WhitePaper_1010.pdf).
+
+[Build ILCoin Source Code - Linux](https://ilcoincrypto.com/img/media/BuildILCoinSourceCode-Linux.pdf).
 
 License
 -------
