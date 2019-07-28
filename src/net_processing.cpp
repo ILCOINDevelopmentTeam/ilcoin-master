@@ -2555,7 +2555,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         //int nHeight = chainActive.Height();
         // LogPrintf("7. chainActive.Height(): %d\n", chainActive.Height());
-        if(chainActive.Height() >= 218018){
+        if(chainActive.Height() > 218018){
           // Keep a CBlock2 for "optimistic" compactblock reconstructions (see
           // below)
           std::shared_ptr<CBlock2> pblock = std::make_shared<CBlock2>();
