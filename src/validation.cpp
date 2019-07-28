@@ -4414,6 +4414,18 @@ static bool CheckIndexAgainstCheckpoint(const CBlockIndex* pindexPrev, CValidati
     return true;
 }
 
+bool CheckIndexAgainstCheckpoint(const CChainParams& chainparams, const uint256& hash)
+{
+    BlockMap::iterator mi = mapBlockIndex.find(hash);
+    if (mi != mapBlockIndex.end()){
+      CBlockIndex* pindex = mi->second;
+      CBlockIndex* pcheckpoint = Checkpoints::GetLastCheckpoint(chainparams.Checkpoints());
+      if (pcheckpoint && pindex->nHeight <= pcheckpoint->nHeight)
+          return true;
+    }
+    return false;
+}
+
 bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params)
 {
     LOCK(cs_main);

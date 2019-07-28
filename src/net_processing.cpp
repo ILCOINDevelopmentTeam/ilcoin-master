@@ -316,6 +316,7 @@ struct CValidate {
 };
 
 std::map<std::string, CValidate> mapValidateList;
+std::map<std::string, CValidate> mapValidateListValid;
 
 /**
  * Maintain validation-specific state about nodes, protected by cs_main, instead
@@ -746,8 +747,9 @@ void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<con
     }
 }
 
-void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock, CConnman& connman, const CNetMsgMaker msgMaker){
+void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock, CConnman& connman, const CNetMsgMaker msgMaker, const CChainParams& chainparams){
   // Read the message certificate.
+
   std::stringstream certificatestream(pblock->message);
   std::string mb;
   std::vector<std::string> certificate_data;
@@ -765,24 +767,31 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
 
   // Do not forget mapValidateList.emplace(_hash.ToString() + pfrom->GetId(), CValidate ...
   // For Bridge Nodes, because the unique map key has to be by over each node request.
+
   const uint256 _hash(pblock->GetHash());
+  // LogPrintf("RequestCertificateValidation %s\n", _hash.ToString());
+  // LogPrintf("RequestCertificateValidation C2P %s\n", pblock->message);
   int64_t nNow = GetTime();
-  mapValidateList.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME) });
+  if(CheckIndexAgainstCheckpoint(chainparams, _hash))
+  {
+    mapValidateListValid.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME) });
+  }
+  else {
+    mapValidateList.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME) });
+    // Request the block to be validated (Send to all peers).
+    for (CNode* vnode : vNodesFiltered) {
+        if (connman.NodeFullyConnected(vnode)){
+          for(uint i = 0 ; i < certificate_data.size() ; i+=3){
+            std::string _key_cert = certificate_data.size() > i ? certificate_data[i] : "";
+            std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
+            std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
 
-  // Request the block to be validated (Send to all peers).
-
-  for (CNode* vnode : vNodesFiltered) {
-      if (connman.NodeFullyConnected(vnode)){
-        for(uint i = 0 ; i < certificate_data.size() ; i+=3){
-          std::string _key_cert = certificate_data.size() > i ? certificate_data[i] : "";
-          std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
-          std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
-
-          LogPrintf("Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
-          CRequestValidate cRequestvalidate(_hash.ToString(), _hash.ToString(), _key_cert, _time_cert, _certificate);
-          connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
+            LogPrintf("Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
+            CRequestValidate cRequestvalidate(_hash.ToString(), _hash.ToString(), _key_cert, _time_cert, _certificate);
+            connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
+          }
         }
-      }
+    }
   }
 }
 
@@ -1591,6 +1600,47 @@ inline void static SendBlockTransactions(const CBlock2& block, const BlockTransa
 
 bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStream& vRecv, int64_t nTimeReceived, const CChainParams& chainparams, CConnman& connman, const std::atomic<bool>& interruptMsgProc)
 {
+
+    bool fDeleteValid = false;
+    // LogPrintf("Hash Valid block ###################\n");
+    for(std::map<std::string, CValidate>::iterator it = mapValidateListValid.begin(); it != mapValidateListValid.end(); it++) {
+      // LogPrintf("Hash Valid block %s prev(%s) tip(%s)\n", it->first, it->second.pblock->hashPrevBlock.ToString(), chainActive.Tip()->GetBlockHash().ToString());
+      if(it->second.pblock->hashPrevBlock == chainActive.Tip()->GetBlockHash() && !fDeleteValid)
+      {
+        CNode* _pfrom = it->second.pfrom;
+        const std::shared_ptr<const CBlock2> _pblock = it->second.pblock;
+        LogPrint("net", "received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
+        LogPrintf("Received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
+
+        // Process all blocks from whitelisted peers, even if not requested,
+        // unless we're still syncing with the network.
+        // Such an unrequested block may still be processed, subject to the
+        // conditions in AcceptBlock().
+        bool forceProcessing = _pfrom->fWhitelisted && !IsInitialBlockDownload();
+        const uint256 hash(_pblock->GetHash());
+        {
+            LOCK(cs_main);
+            // Also always process if we requested the block explicitly, as we may
+            // need it even though it is not a candidate for a new best tip.
+            forceProcessing |= MarkBlockAsReceived(hash);
+            // mapBlockSource is only used for sending reject messages and DoS scores,
+            // so the race between here and cs_main in Process New Block is fine.
+            mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
+
+            bool fNewBlock = false;
+            ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
+            LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
+
+            if (fNewBlock)
+                _pfrom->nLastBlockTime = GetTime();
+
+            mapValidateListValid.erase(it);
+            fDeleteValid = true;
+            break;
+        }
+      }
+    }
+
     LogPrint("net", "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
     // LogPrintf("received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->id);
     if (IsArgSet("-dropmessagestest") && GetRand(GetArg("-dropmessagestest", 0)) == 0)
@@ -2649,7 +2699,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               }
 
               // Certificate Validations
-              RequestCertificateValidation(pfrom, pblock, connman, msgMaker);
+              RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
 
               // bool fNewBlock = false;
               // Process New Block(chainparams, pblock, true, &fNewBlock);
@@ -2895,7 +2945,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               block.message = resp.message;
 
               // Certificate Validations
-              RequestCertificateValidation(pfrom, pblock, connman, msgMaker);
+              RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
 
               // LogPrintf("4. BLOCKTXN - pblock->message: %s\n", pblock->message);
               // Process New Block(chainparams, pblock, true, &fNewBlock);
@@ -3126,7 +3176,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
           vRecv >> *pblock;
 
           // Certificate Validations
-          RequestCertificateValidation(pfrom, pblock, connman, msgMaker);
+          RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
         }
         else {
           std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
@@ -3489,39 +3539,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         LogPrintf("CValidate Init cCerts(%u) cValid(%u) cAsk(%u) cAnswer(%u) hash(%s) percent(%f)\n", it->second.cCerts, it->second.cValid, it->second.cAsk, it->second.cAnswer, it->second.hash.ToString(), _percent);
         bool fDelete = false;
         if(_percent >= MINIMUM_PERCENT_VALID){
-          CNode* _pfrom = it->second.pfrom;
-          const std::shared_ptr<const CBlock2> _pblock = it->second.pblock;
-          LogPrint("net", "received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
-          LogPrintf("Received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
 
-          // Process all blocks from whitelisted peers, even if not requested,
-          // unless we're still syncing with the network.
-          // Such an unrequested block may still be processed, subject to the
-          // conditions in AcceptBlock().
-          bool forceProcessing = _pfrom->fWhitelisted && !IsInitialBlockDownload();
-          const uint256 hash(_pblock->GetHash());
-          {
-              LOCK(cs_main);
-              // Also always process if we requested the block explicitly, as we may
-              // need it even though it is not a candidate for a new best tip.
-              forceProcessing |= MarkBlockAsReceived(hash);
-              // mapBlockSource is only used for sending reject messages and DoS scores,
-              // so the race between here and cs_main in Process New Block is fine.
-              mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
-
-              std::map<std::string, CValidate>::iterator it2 = mapValidateList.find(_hash);
-              if (!(it2 != mapValidateList.end())) return true;
-
-              bool fNewBlock = false;
-              ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
-              LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
-
-              if (fNewBlock)
-                  _pfrom->nLastBlockTime = GetTime();
-
-              mapValidateList.erase(it);
-              fDelete = true;
-          }
+          mapValidateListValid.emplace(it->first, it->second);
+          mapValidateList.erase(it);
+          fDelete = true;
         }
 
         if(!fDelete && it->second.cAsk == it->second.cAnswer){
@@ -3545,8 +3566,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         // Ignore unknown commands for extensibility
         LogPrint("net", "Unknown command \"%s\" from peer=%d\n", SanitizeString(strCommand), pfrom->id);
     }
-
-
 
     return true;
 }
@@ -4477,6 +4496,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
         //   }
         // }
     }
+
     return true;
 }
 

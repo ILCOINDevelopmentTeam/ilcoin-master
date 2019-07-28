@@ -599,4 +599,7 @@ void DumpMempool();
 /** Load the mempool from disk. */
 bool LoadMempool();
 
+/** Check index against checkpoint. */
+bool CheckIndexAgainstCheckpoint(const CChainParams& chainparams, const uint256& hash);
+
 #endif // ILCOIN_VALIDATION_H
