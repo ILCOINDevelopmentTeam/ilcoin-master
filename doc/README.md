@@ -1,4 +1,4 @@
-Ilcoin Core 0.15.7
+Ilcoin Core 0.15.8
 =====================
 
 Setup
