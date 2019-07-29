@@ -2555,7 +2555,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
         //int nHeight = chainActive.Height();
         // LogPrintf("7. chainActive.Height(): %d\n", chainActive.Height());
-        if(chainActive.Height() > 218018){
+        if(chainActive.Height() >= 218018){
           // Keep a CBlock2 for "optimistic" compactblock reconstructions (see
           // below)
           std::shared_ptr<CBlock2> pblock = std::make_shared<CBlock2>();
@@ -4361,6 +4361,8 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             NodeId staller = -1;
             FindNextBlocksToDownload(pto->GetId(), MAX_BLOCKS_IN_TRANSIT_PER_PEER - state.nBlocksInFlight, vToDownload, staller, consensusParams);
             BOOST_FOREACH(const CBlockIndex *pindex, vToDownload) {
+                if(chainActive.Height() < 218018 && pindex->nHeight > 218018) continue;
+                
                 uint32_t nFetchFlags = GetFetchFlags(pto, pindex->pprev, consensusParams);
                 vGetData.push_back(CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
                 MarkBlockAsInFlight(pto->GetId(), pindex->GetBlockHash(), consensusParams, pindex);
