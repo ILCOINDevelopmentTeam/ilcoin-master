@@ -163,6 +163,7 @@ public:
             (      0, uint256S("0x00000000ea6f4df6619b9eb0fdd6cea749ed94bac5b9ee42ce9c12a3c7325cc2"))
             ( 218018, uint256S("0x00000000000000059e0a987829cac4a6120a2ffd85e92c6b462efaf582f32ac6"))
             ( 256800, uint256S("0x0000000000000204c2e7ac41fbe50b68a593188d280ddee377220175ea3d0ad2"))
+            ( 257800, uint256S("0x0000000000000f20305bc4ada03d59c524c1babc2f2011519861046c5d5c0352"))
         };
 
         /* JCOL commitment
