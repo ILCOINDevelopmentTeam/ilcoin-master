@@ -220,5 +220,6 @@ struct CBlockLocator
 
 /** Compute the consensus-critical block weight (see BIP 141). */
 int64_t GetBlockWeight(const CBlock& tx);
+int64_t GetBlockWeight(const CBlock2& tx);
 
 #endif // ILCOIN_PRIMITIVES_BLOCK_H
