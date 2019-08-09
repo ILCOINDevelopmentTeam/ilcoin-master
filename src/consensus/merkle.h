@@ -27,6 +27,7 @@ uint256 BlockMerkleRoot(const CBlock2& block, bool* mutated = NULL);
  * *mutated is set to true if a duplicated subtree was found.
  */
 uint256 BlockWitnessMerkleRoot(const CBlock& block, bool* mutated = NULL);
+uint256 BlockWitnessMerkleRoot(const CBlock2& block, bool* mutated = NULL);
 
 /*
  * Compute the Merkle branch for the tree of transactions in a block, for a
