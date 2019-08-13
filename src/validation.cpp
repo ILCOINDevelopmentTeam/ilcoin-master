@@ -5015,9 +5015,14 @@ static bool AcceptBlock(const std::shared_ptr<const CBlock2>& pblock, CValidatio
             blockPos = *dbp;
         if (!FindBlockPos(state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
             return error("AcceptBlock(): FindBlockPos failed");
-        if (dbp == NULL)
-            if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
-                AbortNode(state, "Failed to write block");
+        if (dbp == NULL) {
+          if (block.message == ""){
+            LogPrintf("AcceptBlock(): Certificate EMPTY\n");
+            return error("AcceptBlock(): Certificate EMPTY");
+          }
+          if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
+              AbortNode(state, "Failed to write block");
+        }
         if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
             return error("AcceptBlock(): ReceivedBlockTransactions failed");
     } catch (const std::runtime_error& e) {
