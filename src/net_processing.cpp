@@ -317,6 +317,7 @@ struct CValidate {
 
 std::map<std::string, CValidate> mapValidateList;
 std::map<std::string, CValidate> mapValidateListValid;
+std::map<std::string, CValidate> mapValidateBridgeList;
 
 /**
  * Maintain validation-specific state about nodes, protected by cs_main, instead
@@ -3517,7 +3518,41 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     else if (strCommand == NetMsgType::VALIDATE_REQUEST)
     {
+      LogPrintf("VALIDATE_REQUEST\n");
+      CRequestValidate cRequestvalidate_req;
+      vRecv >> cRequestvalidate_req;
+      LogPrintf("VALIDATE_REQUEST (%s)\n", cRequestvalidate_req.ToString());
 
+      std::string _hash = cRequestvalidate_req.hash;
+      std::string id_valid = _hash + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime());
+
+      // The check points block do not require certificate validation.
+      if(CheckIndexAgainstCheckpoint(chainparams, uint256S(_hash)))
+      {
+        CResponseValidate cResponseValidate_bridge(id_valid, _hash, pfrom->GetId(), "True");
+        connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+      }
+      else
+      {
+        std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
+
+        int _cCerts = 1;
+        int _cValid = 0;
+        int _cAsk = vNodesFiltered.size();
+        int _cAnswer = 0;
+        mapValidateBridgeList.emplace(id_valid, CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, uint256S(_hash), pfrom, NULL });
+
+        std::string _key_cert = cRequestvalidate_req.key_cert;
+        std::string _time_cert = cRequestvalidate_req.time_cert;
+        std::string _certificate = cRequestvalidate_req.certificate;
+
+        for (CNode* vnode : vNodesFiltered) {
+          if (connman.NodeFullyConnected(vnode)){
+            CRequestValidate cRequestvalidate_bridge(id_valid, _hash, _key_cert, _time_cert, _certificate);
+            connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST_BRIDGE_SYNC, cRequestvalidate_bridge));
+          }
+        }
+      }
     }
 
     else if (strCommand == NetMsgType::VALIDATE_RESPONSE)
@@ -3550,6 +3585,38 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
       }
       // LogPrintf("VALIDATE_RESPONSE Size Map (%u)\n", mapValidateList.size());
+
+      // If not valid and all answered false take away from map.
+    }
+
+    else if (strCommand == NetMsgType::VALIDATE_RESPONSE_BRIDGE_SYNC)
+    {
+      // LogPrintf("VALIDATE_RESPONSE_BRIDGE\n");
+      CResponseValidate cResponseValidate_res;
+      vRecv >> cResponseValidate_res;
+      // LogPrintf("VALIDATE_RESPONSE_BRIDGE (%s)\n", cResponseValidate_res.ToString());
+      CNodeState &nodestate = *State(pfrom->GetId());
+      std::string _id_valid = cResponseValidate_res.id_valid;
+      std::string _hash = cResponseValidate_res.hash;
+
+      std::map<std::string, CValidate>::iterator it = mapValidateBridgeList.find(_id_valid);
+      if (it != mapValidateBridgeList.end()){
+        it->second.cAnswer++;
+        bool fDelete = false;
+        if(cResponseValidate_res.valid == "True"){
+          it->second.cValid++;
+          CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
+          connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+
+          mapValidateBridgeList.erase(it);
+          fDelete = true;
+        }
+
+        if(!fDelete && it->second.cAsk == it->second.cAnswer){
+          mapValidateBridgeList.erase(it);
+        }
+      }
+      // LogPrintf("VALIDATE_RESPONSE_BRIDGE Size Map (%u)\n", mapValidateBridgeList.size());
 
       // If not valid and all answered false take away from map.
     }
@@ -4362,7 +4429,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             FindNextBlocksToDownload(pto->GetId(), MAX_BLOCKS_IN_TRANSIT_PER_PEER - state.nBlocksInFlight, vToDownload, staller, consensusParams);
             BOOST_FOREACH(const CBlockIndex *pindex, vToDownload) {
                 if(chainActive.Height() < 218018 && pindex->nHeight > 218018) continue;
-                
+
                 uint32_t nFetchFlags = GetFetchFlags(pto, pindex->pprev, consensusParams);
                 vGetData.push_back(CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
                 MarkBlockAsInFlight(pto->GetId(), pindex->GetBlockHash(), consensusParams, pindex);

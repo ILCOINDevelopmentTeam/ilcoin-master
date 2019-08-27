@@ -247,6 +247,8 @@ extern const char *VALIDATE_REQUEST;
 extern const char *VALIDATE_RESPONSE;
 extern const char *VALIDATE_REQUEST_BRIDGE;
 extern const char *VALIDATE_RESPONSE_BRIDGE;
+extern const char *VALIDATE_REQUEST_BRIDGE_SYNC;
+extern const char *VALIDATE_RESPONSE_BRIDGE_SYNC;
 };
 
 /* Get a vector of all valid message types (see above) */

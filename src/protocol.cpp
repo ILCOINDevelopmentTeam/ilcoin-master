@@ -46,6 +46,8 @@ const char *VALIDATE_REQUEST="validatereqs";
 const char *VALIDATE_RESPONSE="validateresp";
 const char *VALIDATE_REQUEST_BRIDGE="validreqsbri";
 const char *VALIDATE_RESPONSE_BRIDGE="validrespbri";
+const char *VALIDATE_REQUEST_BRIDGE_SYNC= "valreqsbsync";
+const char *VALIDATE_RESPONSE_BRIDGE_SYNC="valressbsync";
 };
 
 /** All known message types. Keep this in the same order as the list of
@@ -85,7 +87,9 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::VALIDATE_REQUEST,
     NetMsgType::VALIDATE_RESPONSE,
     NetMsgType::VALIDATE_REQUEST_BRIDGE,
-    NetMsgType::VALIDATE_RESPONSE_BRIDGE
+    NetMsgType::VALIDATE_RESPONSE_BRIDGE,
+    NetMsgType::VALIDATE_REQUEST_BRIDGE_SYNC,
+    NetMsgType::VALIDATE_RESPONSE_BRIDGE_SYNC
 };
 const static std::vector<std::string> allNetMessageTypesVec(allNetMessageTypes, allNetMessageTypes+ARRAYLEN(allNetMessageTypes));
 
