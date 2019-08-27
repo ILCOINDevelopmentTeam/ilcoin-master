@@ -2415,7 +2415,7 @@ std::vector<CNode*> CConnman::GetValidatorNodeList()
 {
   std::vector<CNode*> vNodesFiltered;
   for(uint i = 0 ; i < vNodes.size() ; i++){
-    if(((CNode*)vNodes[i])->fValidator)
+    if(((CNode*)vNodes[i])->fValidator && !(((CNode*)vNodes[i])->fInbound))
       vNodesFiltered.push_back(vNodes[i]);
   }
   return vNodesFiltered;

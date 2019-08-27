@@ -1603,41 +1603,43 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 {
 
     bool fDeleteValid = false;
-    // LogPrintf("Hash Valid block ###################\n");
-    for(std::map<std::string, CValidate>::iterator it = mapValidateListValid.begin(); it != mapValidateListValid.end(); it++) {
-      // LogPrintf("Hash Valid block %s prev(%s) tip(%s)\n", it->first, it->second.pblock->hashPrevBlock.ToString(), chainActive.Tip()->GetBlockHash().ToString());
-      if(it->second.pblock->hashPrevBlock == chainActive.Tip()->GetBlockHash() && !fDeleteValid)
-      {
-        CNode* _pfrom = it->second.pfrom;
-        const std::shared_ptr<const CBlock2> _pblock = it->second.pblock;
-        LogPrint("net", "received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
-        LogPrintf("Received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
-
-        // Process all blocks from whitelisted peers, even if not requested,
-        // unless we're still syncing with the network.
-        // Such an unrequested block may still be processed, subject to the
-        // conditions in AcceptBlock().
-        bool forceProcessing = _pfrom->fWhitelisted && !IsInitialBlockDownload();
-        const uint256 hash(_pblock->GetHash());
+    {
+      LOCK(cs_main);
+      for(std::map<std::string, CValidate>::iterator it = mapValidateListValid.begin(); it != mapValidateListValid.end(); it++) {
+        // LogPrintf("Hash Valid block %s prev(%s) tip(%s)\n", it->first, it->second.pblock->hashPrevBlock.ToString(), chainActive.Tip()->GetBlockHash().ToString());
+        if(it->second.pblock->hashPrevBlock == chainActive.Tip()->GetBlockHash() && !fDeleteValid)
         {
-            LOCK(cs_main);
-            // Also always process if we requested the block explicitly, as we may
-            // need it even though it is not a candidate for a new best tip.
-            forceProcessing |= MarkBlockAsReceived(hash);
-            // mapBlockSource is only used for sending reject messages and DoS scores,
-            // so the race between here and cs_main in Process New Block is fine.
-            mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
+          CNode* _pfrom = it->second.pfrom;
+          const std::shared_ptr<const CBlock2> _pblock = it->second.pblock;
+          LogPrint("net", "received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
+          LogPrintf("Received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
 
-            bool fNewBlock = false;
-            ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
-            LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
+          // Process all blocks from whitelisted peers, even if not requested,
+          // unless we're still syncing with the network.
+          // Such an unrequested block may still be processed, subject to the
+          // conditions in AcceptBlock().
+          bool forceProcessing = _pfrom->fWhitelisted && !IsInitialBlockDownload();
+          const uint256 hash(_pblock->GetHash());
+          {
+              LOCK(cs_main);
+              // Also always process if we requested the block explicitly, as we may
+              // need it even though it is not a candidate for a new best tip.
+              forceProcessing |= MarkBlockAsReceived(hash);
+              // mapBlockSource is only used for sending reject messages and DoS scores,
+              // so the race between here and cs_main in Process New Block is fine.
+              mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
 
-            if (fNewBlock)
-                _pfrom->nLastBlockTime = GetTime();
+              bool fNewBlock = false;
+              ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
+              LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
 
-            mapValidateListValid.erase(it);
-            fDeleteValid = true;
-            break;
+              if (fNewBlock)
+                  _pfrom->nLastBlockTime = GetTime();
+
+              mapValidateListValid.erase(it);
+              fDeleteValid = true;
+              break;
+          }
         }
       }
     }
@@ -3518,10 +3520,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     else if (strCommand == NetMsgType::VALIDATE_REQUEST)
     {
-      LogPrintf("VALIDATE_REQUEST\n");
+      // LogPrintf("VALIDATE_REQUEST\n");
       CRequestValidate cRequestvalidate_req;
       vRecv >> cRequestvalidate_req;
-      LogPrintf("VALIDATE_REQUEST (%s)\n", cRequestvalidate_req.ToString());
+      // LogPrintf("VALIDATE_REQUEST (%s)\n", cRequestvalidate_req.ToString());
 
       std::string _hash = cRequestvalidate_req.hash;
       std::string id_valid = _hash + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime());
@@ -3563,25 +3565,26 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       // LogPrintf("VALIDATE_RESPONSE (%s)\n", cResponseValidate.ToString());
       CNodeState &nodestate = *State(pfrom->GetId());
       std::string _hash = cResponseValidate.hash;
+      {
+        LOCK(cs_main);
+        std::map<std::string, CValidate>::iterator it = mapValidateList.find(_hash);
+        if (it != mapValidateList.end()){
+          it->second.cAnswer++;
+          if(cResponseValidate.valid == "True") it->second.cValid++;
 
-      std::map<std::string, CValidate>::iterator it = mapValidateList.find(_hash);
-      if (it != mapValidateList.end()){
-        it->second.cAnswer++;
-        if(cResponseValidate.valid == "True") it->second.cValid++;
+          float _percent = 0.0;
+          if(it->second.cCerts > 0) _percent = (float)it->second.cValid / (float)it->second.cCerts;
+          bool fDelete = false;
+          if(_percent >= MINIMUM_PERCENT_VALID){
+            LogPrintf("CValidate Init cCerts(%u) cValid(%u) cAsk(%u) cAnswer(%u) hash(%s) percent(%f)\n", it->second.cCerts, it->second.cValid, it->second.cAsk, it->second.cAnswer, it->second.hash.ToString(), _percent);
+            mapValidateListValid.emplace(it->first, it->second);
+            mapValidateList.erase(it);
+            fDelete = true;
+          }
 
-        float _percent = 0.0;
-        if(it->second.cCerts > 0) _percent = (float)it->second.cValid / (float)it->second.cCerts;
-        LogPrintf("CValidate Init cCerts(%u) cValid(%u) cAsk(%u) cAnswer(%u) hash(%s) percent(%f)\n", it->second.cCerts, it->second.cValid, it->second.cAsk, it->second.cAnswer, it->second.hash.ToString(), _percent);
-        bool fDelete = false;
-        if(_percent >= MINIMUM_PERCENT_VALID){
-
-          mapValidateListValid.emplace(it->first, it->second);
-          mapValidateList.erase(it);
-          fDelete = true;
-        }
-
-        if(!fDelete && it->second.cAsk == it->second.cAnswer){
-          mapValidateList.erase(it);
+          if(!fDelete && it->second.cAsk == it->second.cAnswer){
+            mapValidateList.erase(it);
+          }
         }
       }
       // LogPrintf("VALIDATE_RESPONSE Size Map (%u)\n", mapValidateList.size());
@@ -3598,22 +3601,24 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       CNodeState &nodestate = *State(pfrom->GetId());
       std::string _id_valid = cResponseValidate_res.id_valid;
       std::string _hash = cResponseValidate_res.hash;
+      {
+        LOCK(cs_main);
+        std::map<std::string, CValidate>::iterator it = mapValidateBridgeList.find(_id_valid);
+        if (it != mapValidateBridgeList.end()){
+          it->second.cAnswer++;
+          bool fDelete = false;
+          if(cResponseValidate_res.valid == "True"){
+            it->second.cValid++;
+            CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
+            connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
 
-      std::map<std::string, CValidate>::iterator it = mapValidateBridgeList.find(_id_valid);
-      if (it != mapValidateBridgeList.end()){
-        it->second.cAnswer++;
-        bool fDelete = false;
-        if(cResponseValidate_res.valid == "True"){
-          it->second.cValid++;
-          CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
-          connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+            mapValidateBridgeList.erase(it);
+            fDelete = true;
+          }
 
-          mapValidateBridgeList.erase(it);
-          fDelete = true;
-        }
-
-        if(!fDelete && it->second.cAsk == it->second.cAnswer){
-          mapValidateBridgeList.erase(it);
+          if(!fDelete && it->second.cAsk == it->second.cAnswer){
+            mapValidateBridgeList.erase(it);
+          }
         }
       }
       // LogPrintf("VALIDATE_RESPONSE_BRIDGE Size Map (%u)\n", mapValidateBridgeList.size());
