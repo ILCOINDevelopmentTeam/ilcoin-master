@@ -3526,7 +3526,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       // LogPrintf("VALIDATE_REQUEST (%s)\n", cRequestvalidate_req.ToString());
 
       std::string _hash = cRequestvalidate_req.hash;
-      std::string id_valid = _hash + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime()) + "_sync";
+      std::string id_valid = _hash + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime()) + "_sync" + std::to_string(rand() % 100000 + 1);
 
       // The check points block do not require certificate validation.
       if(CheckIndexAgainstCheckpoint(chainparams, uint256S(_hash)))
