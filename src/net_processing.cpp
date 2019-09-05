@@ -65,7 +65,7 @@ static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SH
 static const float MINIMUM_PERCENT_VALID = 0.25;
 
 /** No Answer time for certificate in seconds */
-static const int64_t CERTIFICATE_NO_ANSWER_TIME = 30 * 60;
+static const int64_t CERTIFICATE_NO_ANSWER_TIME = 1 * 60;
 
 // Internal stuff
 namespace {
@@ -311,8 +311,9 @@ struct CValidate {
     int cAnswer;
     uint256 hash;
     CNode* pfrom;
-    const std::shared_ptr<CBlock2> pblock;
+    std::shared_ptr<CBlock2> pblock;
     int64_t nMinExpTime;
+    std::string message;
 };
 
 std::map<std::string, CValidate> mapValidateList;
@@ -607,7 +608,7 @@ void MaybeSetPeerAsAnnouncingHeaderAndIDs(NodeId nodeid, CConnman& connman) {
         }
         connman.ForNode(nodeid, [&connman](CNode* pfrom){
             bool fAnnounceUsingCMPCTBLOCK = false;
-            uint64_t nCMPCTBLOCKVersion = (pfrom->GetLocalServices() & NODE_WITNESS) ? 2 : 1;
+            uint64_t nCMPCTBLOCKVersion = 0;
             if (lNodesAnnouncingHeaderAndIDs.size() >= 3) {
                 // As per BIP152, we only get 3 of our peers to announce
                 // blocks using compact encodings.
@@ -775,10 +776,10 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
   int64_t nNow = GetTime();
   if(CheckIndexAgainstCheckpoint(chainparams, _hash))
   {
-    mapValidateListValid.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME) });
+    mapValidateListValid.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME), pblock->message });
   }
   else {
-    mapValidateList.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME) });
+    mapValidateList.emplace(_hash.ToString(), CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, _hash, pfrom, pblock, (nNow + CERTIFICATE_NO_ANSWER_TIME), pblock->message });
     // Request the block to be validated (Send to all peers).
     for (CNode* vnode : vNodesFiltered) {
         if (connman.NodeFullyConnected(vnode)){
@@ -792,6 +793,49 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
             connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
           }
         }
+    }
+  }
+}
+
+void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
+{
+  for (std::map<std::string, CValidate>::iterator it = mapValidateList.begin(); it != mapValidateList.end(); it++ )
+  {
+    int64_t nNow = GetTime();
+    if((it->second.cAnswer == 0 && nNow > it->second.nMinExpTime) || fForce)
+    {
+      LogPrintf("ResendCertificateNoAnswer Validate Init\n");
+      const CNetMsgMaker msgMaker(it->second.pfrom->GetSendVersion());
+
+      // Read the message certificate.
+      std::stringstream certificatestream(it->second.message);
+      std::string mb;
+      std::vector<std::string> certificate_data;
+      while(std::getline(certificatestream, mb, '|'))
+      {
+         certificate_data.push_back(mb);
+      }
+
+      std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
+      const uint256 _hash(it->second.pblock->GetHash());
+
+      LogPrintf("ResendCertificateNoAnswer Validate Message(%s) vNodesFiltered.size(%d)\n", it->second.message, vNodesFiltered.size());
+
+      for (CNode* vnode : vNodesFiltered) {
+          if (connman.NodeFullyConnected(vnode)){
+            for(uint i = 0 ; i < certificate_data.size() ; i+=3){
+              std::string _key_cert = certificate_data.size() > i ? certificate_data[i] : "";
+              std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
+              std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
+
+              LogPrintf("ResendCertificateNoAnswer Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
+              CRequestValidate cRequestvalidate(_hash.ToString(), _hash.ToString(), _key_cert, _time_cert, _certificate);
+              connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
+            }
+          }
+      }
+
+      it->second.nMinExpTime = nNow + CERTIFICATE_NO_ANSWER_TIME;
     }
   }
 }
@@ -1610,7 +1654,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         if(it->second.pblock->hashPrevBlock == chainActive.Tip()->GetBlockHash() && !fDeleteValid)
         {
           CNode* _pfrom = it->second.pfrom;
-          const std::shared_ptr<const CBlock2> _pblock = it->second.pblock;
+          std::shared_ptr<CBlock2> _pblock = it->second.pblock;
           LogPrint("net", "received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
           LogPrintf("Received block %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
 
@@ -1630,6 +1674,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
 
               bool fNewBlock = false;
+              _pblock->message = it->second.message;
               ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
               LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
 
@@ -1731,6 +1776,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, strCommand, REJECT_NONSTANDARD,
                                strprintf("Expected to offer services %08x", pfrom->nServicesExpected)));
             pfrom->fDisconnect = true;
+            ResendCertificateNoAnswer(connman, true);
             return false;
         }
 
@@ -1741,6 +1787,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION)));
             pfrom->fDisconnect = true;
+            ResendCertificateNoAnswer(connman, true);
             return false;
         }
 
@@ -1762,6 +1809,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         {
             LogPrintf("connected to self at %s, disconnecting\n", pfrom->addr.ToString());
             pfrom->fDisconnect = true;
+            ResendCertificateNoAnswer(connman, true);
             return true;
         }
 
@@ -1898,7 +1946,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             // We send this to non-NODE NETWORK peers as well, because
             // they may wish to request compact blocks from us
             bool fAnnounceUsingCMPCTBLOCK = false;
-            uint64_t nCMPCTBLOCKVersion = 2;
+            uint64_t nCMPCTBLOCKVersion = 0;
             if (pfrom->GetLocalServices() & NODE_WITNESS)
                 connman.PushMessage(pfrom, msgMaker.Make(NetMsgType::SENDCMPCT, fAnnounceUsingCMPCTBLOCK, nCMPCTBLOCKVersion));
             nCMPCTBLOCKVersion = 1;
@@ -2702,7 +2750,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               }
 
               // Certificate Validations
-              RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+              if(pblock->message != "") RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+              else {
+                MarkBlockAsReceived(pblock->GetHash());
+                LogPrintf("RequestCertificateValidation Not Accepted Empty Message (%s) NetMsgType::CMPCTBLOCK\n", pblock->GetHash().ToString());
+              }
 
               // bool fNewBlock = false;
               // Process New Block(chainparams, pblock, true, &fNewBlock);
@@ -2948,7 +3000,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               block.message = resp.message;
 
               // Certificate Validations
-              RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+              if(pblock->message != "") RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+              else {
+                MarkBlockAsReceived(pblock->GetHash());
+                LogPrintf("RequestCertificateValidation Not Accepted Empty Message (%s) NetMsgType::BLOCKTXN\n", pblock->GetHash().ToString());
+              }
 
               // LogPrintf("4. BLOCKTXN - pblock->message: %s\n", pblock->message);
               // Process New Block(chainparams, pblock, true, &fNewBlock);
@@ -3179,7 +3235,11 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
           vRecv >> *pblock;
 
           // Certificate Validations
-          RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+          if(pblock->message != "") RequestCertificateValidation(pfrom, pblock, connman, msgMaker, chainparams);
+          else {
+            MarkBlockAsReceived(pblock->GetHash());
+            LogPrintf("RequestCertificateValidation Not Accepted Empty Message (%s) NetMsgType::BLOCK\n", pblock->GetHash().ToString());
+          }
         }
         else {
           std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
@@ -3542,7 +3602,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         int _cValid = 0;
         int _cAsk = vNodesFiltered.size();
         int _cAnswer = 0;
-        mapValidateBridgeList.emplace(id_valid, CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, uint256S(_hash), pfrom, NULL });
+        mapValidateBridgeList.emplace(id_valid, CValidate{ _cCerts, _cValid, _cAsk, _cAnswer, uint256S(_hash), pfrom, NULL, 0, "" });
 
         std::string _key_cert = cRequestvalidate_req.key_cert;
         std::string _time_cert = cRequestvalidate_req.time_cert;
@@ -3640,47 +3700,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
     }
 
     return true;
-}
-
-void ResendCertificateNoAnswer(CConnman& connman)
-{
-  for (std::map<std::string, CValidate>::iterator it = mapValidateList.begin(); it != mapValidateList.end(); it++ )
-  {
-    int64_t nNow = GetTime();
-    if(it->second.cAnswer == 0 && nNow > it->second.nMinExpTime)
-    {
-      LogPrintf("ResendCertificateNoAnswer Validate Init\n");
-      const CNetMsgMaker msgMaker(it->second.pfrom->GetSendVersion());
-
-      // Read the message certificate.
-      std::stringstream certificatestream(it->second.pblock->message);
-      std::string mb;
-      std::vector<std::string> certificate_data;
-      while(std::getline(certificatestream, mb, '|'))
-      {
-         certificate_data.push_back(mb);
-      }
-
-      std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
-      const uint256 _hash(it->second.pblock->GetHash());
-
-      for (CNode* vnode : vNodesFiltered) {
-          if (connman.NodeFullyConnected(vnode)){
-            for(uint i = 0 ; i < certificate_data.size() ; i+=3){
-              std::string _key_cert = certificate_data.size() > i ? certificate_data[i] : "";
-              std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
-              std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
-
-              LogPrintf("ResendCertificateNoAnswer Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
-              CRequestValidate cRequestvalidate(_hash.ToString(), _hash.ToString(), _key_cert, _time_cert, _certificate);
-              connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
-            }
-          }
-      }
-
-      it->second.nMinExpTime = nNow + CERTIFICATE_NO_ANSWER_TIME;
-    }
-  }
 }
 
 static bool SendRejectsAndCheckIfBanned(CNode* pnode, CConnman& connman)
@@ -4407,6 +4426,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             // should only happen during initial block download.
             LogPrintf("Peer=%d is stalling block download, disconnecting\n", pto->id);
             pto->fDisconnect = true;
+            ResendCertificateNoAnswer(connman, true);
             return true;
         }
         // In case there is a block that has been in flight from this peer for 2 + 0.5 * N times the block interval
@@ -4420,6 +4440,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             if (nNow > state.nDownloadingSince + consensusParams.nPowTargetSpacing * (BLOCK_DOWNLOAD_TIMEOUT_BASE + BLOCK_DOWNLOAD_TIMEOUT_PER_PEER * nOtherPeersWithValidatedDownloads)) {
                 LogPrintf("Timeout downloading block %s from peer=%d, disconnecting\n", queuedBlock.hash.ToString(), pto->id);
                 pto->fDisconnect = true;
+                ResendCertificateNoAnswer(connman, true);
                 return true;
             }
         }
