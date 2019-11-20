@@ -3,7 +3,7 @@
 # linearize-data.py: Construct a linear, no-fork version of the chain.
 #
 # Copyright (c) 2013-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 #
 
 from __future__ import print_function, division

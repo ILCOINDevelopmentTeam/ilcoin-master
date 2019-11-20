@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "merkleblock.h"
 
@@ -58,6 +58,31 @@ CMerkleBlock::CMerkleBlock(const CBlock2& block, CBloomFilter& filter)
 
     txn = CPartialMerkleTree(vHashes, vMatch);
 }
+CMerkleBlock::CMerkleBlock(const CBlock3& block, CBloomFilter& filter)
+{
+    header = block.GetBlockHeader();
+
+    std::vector<bool> vMatch;
+    std::vector<uint256> vHashes;
+
+    vMatch.reserve(block.vtx.size());
+    vHashes.reserve(block.vtx.size());
+
+    for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const uint256& hash = block.vtx[i]->GetHash();
+        if (filter.IsRelevantAndUpdate(*block.vtx[i]))
+        {
+            vMatch.push_back(true);
+            vMatchedTxn.push_back(std::make_pair(i, hash));
+        }
+        else
+            vMatch.push_back(false);
+        vHashes.push_back(hash);
+    }
+
+    txn = CPartialMerkleTree(vHashes, vMatch);
+}
 
 CMerkleBlock::CMerkleBlock(const CBlock& block, const std::set<uint256>& txids)
 {
@@ -82,6 +107,28 @@ CMerkleBlock::CMerkleBlock(const CBlock& block, const std::set<uint256>& txids)
     txn = CPartialMerkleTree(vHashes, vMatch);
 }
 CMerkleBlock::CMerkleBlock(const CBlock2& block, const std::set<uint256>& txids)
+{
+    header = block.GetBlockHeader();
+
+    std::vector<bool> vMatch;
+    std::vector<uint256> vHashes;
+
+    vMatch.reserve(block.vtx.size());
+    vHashes.reserve(block.vtx.size());
+
+    for (unsigned int i = 0; i < block.vtx.size(); i++)
+    {
+        const uint256& hash = block.vtx[i]->GetHash();
+        if (txids.count(hash))
+            vMatch.push_back(true);
+        else
+            vMatch.push_back(false);
+        vHashes.push_back(hash);
+    }
+
+    txn = CPartialMerkleTree(vHashes, vMatch);
+}
+CMerkleBlock::CMerkleBlock(const CBlock3& block, const std::set<uint256>& txids)
 {
     header = block.GetBlockHeader();
 

@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef __cplusplus
 #error This header can only be compiled as C++.
@@ -239,10 +239,11 @@ extern const char *GETBLOCKTXN;
  * @since protocol version 70014 as described by BIP 152
  */
 extern const char *BLOCKTXN;
-extern const char *SENDMINIBLOCK;
+extern const char *MINIBLOCK;
 extern const char *RECMINIBLOCKS;
 extern const char *ASKMINIBLOCKS;
 extern const char *DELMINIBLOCKS;
+extern const char *GETMINIDATA;
 extern const char *VALIDATE_REQUEST;
 extern const char *VALIDATE_RESPONSE;
 extern const char *VALIDATE_REQUEST_BRIDGE;
@@ -335,6 +336,7 @@ enum GetDataMsg
     UNDEFINED = 0,
     MSG_TX = 1,
     MSG_BLOCK = 2,
+    MSG_MINIBLOCK = 5,
     // The following can only occur in getdata. Invs always use TX or BLOCK.
     MSG_FILTERED_BLOCK = 3,  //!< Defined in BIP37
     MSG_CMPCT_BLOCK = 4,     //!< Defined in BIP152

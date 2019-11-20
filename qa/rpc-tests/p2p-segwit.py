@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 """Test segwit transactions and blocks on P2P network."""
 
 from test_framework.mininode import *

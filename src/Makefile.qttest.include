@@ -1,5 +1,5 @@
 # Copyright (c) 2013-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 bin_PROGRAMS += qt/test/test_ilcoin-qt
 TESTS += qt/test/test_ilcoin-qt

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2012-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 Generate valid and invalid base58 address and private key test vectors.
 

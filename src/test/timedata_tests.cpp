@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2015 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 //
 #include "timedata.h"
 #include "test/test_ilcoin.h"

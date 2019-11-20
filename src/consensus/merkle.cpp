@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "merkle.h"
 #include "hash.h"
@@ -172,6 +172,15 @@ uint256 BlockMerkleRoot(const CBlock2& block, bool* mutated)
     }
     return ComputeMerkleRoot(leaves, mutated);
 }
+uint256 BlockMerkleRoot(const CBlock3& block, bool* mutated)
+{
+    std::vector<uint256> leaves;
+    leaves.resize(block.vtx.size());
+    for (size_t s = 0; s < block.vtx.size(); s++) {
+        leaves[s] = block.vtx[s]->GetHash();
+    }
+    return ComputeMerkleRoot(leaves, mutated);
+}
 
 uint256 BlockWitnessMerkleRoot(const CBlock& block, bool* mutated)
 {
@@ -184,6 +193,16 @@ uint256 BlockWitnessMerkleRoot(const CBlock& block, bool* mutated)
     return ComputeMerkleRoot(leaves, mutated);
 }
 uint256 BlockWitnessMerkleRoot(const CBlock2& block, bool* mutated)
+{
+    std::vector<uint256> leaves;
+    leaves.resize(block.vtx.size());
+    leaves[0].SetNull(); // The witness hash of the coinbase is 0.
+    for (size_t s = 1; s < block.vtx.size(); s++) {
+        leaves[s] = block.vtx[s]->GetWitnessHash();
+    }
+    return ComputeMerkleRoot(leaves, mutated);
+}
+uint256 BlockWitnessMerkleRoot(const CBlock3& block, bool* mutated)
 {
     std::vector<uint256> leaves;
     leaves.resize(block.vtx.size());

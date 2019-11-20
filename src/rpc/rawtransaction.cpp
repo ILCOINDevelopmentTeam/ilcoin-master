@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "base58.h"
 #include "chain.h"
@@ -298,7 +298,25 @@ UniValue gettxoutproof(const JSONRPCRequest& request)
     }
 
     int nHeight = pblockindex->nHeight;
-    if(nHeight > 218018){
+    if(nHeight > 305521){
+      CBlock3 block;
+      if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
+          throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+      unsigned int ntxFound = 0;
+      for (const auto& tx : block.vtx)
+          if (setTxids.count(tx->GetHash()))
+              ntxFound++;
+      if (ntxFound != setTxids.size())
+          throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "(Not all) transactions not found in specified block");
+
+      CDataStream ssMB(SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+      CMerkleBlock mb(block, setTxids);
+      ssMB << mb;
+      std::string strHex = HexStr(ssMB.begin(), ssMB.end());
+      return strHex;
+    }
+    else if(nHeight > 218018){
       CBlock2 block;
       if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
           throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");

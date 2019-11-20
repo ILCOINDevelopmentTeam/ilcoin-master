@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2013 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 if [ -d "$1" ]; then
   cd "$1"

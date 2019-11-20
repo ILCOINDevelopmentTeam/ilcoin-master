@@ -1,4 +1,4 @@
-Ilcoin Core 0.15.9
+Ilcoin Core 0.16.0
 =====================
 
 Intro

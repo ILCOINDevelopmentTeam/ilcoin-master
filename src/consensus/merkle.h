@@ -1,5 +1,5 @@
 // Copyright (c) 2015 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_MERKLE
 #define ILCOIN_MERKLE
@@ -21,6 +21,7 @@ uint256 ComputeMerkleRootFromBranch(const uint256& leaf, const std::vector<uint2
  */
 uint256 BlockMerkleRoot(const CBlock& block, bool* mutated = NULL);
 uint256 BlockMerkleRoot(const CBlock2& block, bool* mutated = NULL);
+uint256 BlockMerkleRoot(const CBlock3& block, bool* mutated = NULL);
 
 /*
  * Compute the Merkle root of the witness transactions in a block.
@@ -28,6 +29,7 @@ uint256 BlockMerkleRoot(const CBlock2& block, bool* mutated = NULL);
  */
 uint256 BlockWitnessMerkleRoot(const CBlock& block, bool* mutated = NULL);
 uint256 BlockWitnessMerkleRoot(const CBlock2& block, bool* mutated = NULL);
+uint256 BlockWitnessMerkleRoot(const CBlock3& block, bool* mutated = NULL);
 
 /*
  * Compute the Merkle branch for the tree of transactions in a block, for a

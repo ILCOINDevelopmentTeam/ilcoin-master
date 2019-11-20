@@ -2998,7 +2998,7 @@
         <translation>Eingehende Verbindungen annehmen (Standard: 1, wenn nicht -proxy oder -connect/-noconnect)</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Veröffentlicht unter der MIT-Softwarelizenz, siehe beiligende Datei %s oder %s.</translation>
     </message>
     <message>

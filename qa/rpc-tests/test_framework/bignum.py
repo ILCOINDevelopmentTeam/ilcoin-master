@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 """Big number routines.
 
 This file is copied from python-ilcoinlib.

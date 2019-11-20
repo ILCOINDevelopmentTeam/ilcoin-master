@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 """Encode and decode BASE58, P2PKH and P2SH addresses."""
 
 from .script import hash256, hash160, sha256, CScript, OP_0

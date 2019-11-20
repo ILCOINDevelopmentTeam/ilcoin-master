@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "protocol.h"
 
@@ -38,10 +38,11 @@ const char *SENDCMPCT="sendcmpct";
 const char *CMPCTBLOCK="cmpctblock";
 const char *GETBLOCKTXN="getblocktxn";
 const char *BLOCKTXN="blocktxn";
-const char *SENDMINIBLOCK="sendmblk";
+const char *MINIBLOCK="miniblock";
 const char *RECMINIBLOCKS="recmblk";
 const char *ASKMINIBLOCKS="askmblk";
 const char *DELMINIBLOCKS="delmblk";
+const char *GETMINIDATA="getminidata";
 const char *VALIDATE_REQUEST="validatereqs";
 const char *VALIDATE_RESPONSE="validateresp";
 const char *VALIDATE_REQUEST_BRIDGE="validreqsbri";
@@ -80,10 +81,11 @@ const static std::string allNetMessageTypes[] = {
     NetMsgType::CMPCTBLOCK,
     NetMsgType::GETBLOCKTXN,
     NetMsgType::BLOCKTXN,
-    NetMsgType::SENDMINIBLOCK,
+    NetMsgType::MINIBLOCK,
     NetMsgType::RECMINIBLOCKS,
     NetMsgType::ASKMINIBLOCKS,
     NetMsgType::DELMINIBLOCKS,
+    NetMsgType::GETMINIDATA,
     NetMsgType::VALIDATE_REQUEST,
     NetMsgType::VALIDATE_RESPONSE,
     NetMsgType::VALIDATE_REQUEST_BRIDGE,
@@ -191,6 +193,7 @@ std::string CInv::GetCommand() const
     {
     case MSG_TX:             return cmd.append(NetMsgType::TX);
     case MSG_BLOCK:          return cmd.append(NetMsgType::BLOCK);
+    case MSG_MINIBLOCK:      return cmd.append(NetMsgType::MINIBLOCK);
     case MSG_FILTERED_BLOCK: return cmd.append(NetMsgType::MERKLEBLOCK);
     case MSG_CMPCT_BLOCK:    return cmd.append(NetMsgType::CMPCTBLOCK);
     default:

@@ -1,5 +1,5 @@
 dnl Copyright (c) 2013-2014 The Ilcoin Core developers
-dnl All Rights Reserved. Ilgamos International 2017©
+dnl All Rights Reserved. ILCoin Blockchain Project 2019©
 
 dnl ILCOIN_SUBDIR_TO_INCLUDE([CPPFLAGS-VARIABLE-NAME],[SUBDIRECTORY-NAME],[HEADER-FILE])
 dnl SUBDIRECTORY-NAME must end with a path separator

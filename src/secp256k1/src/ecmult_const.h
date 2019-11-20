@@ -1,4 +1,4 @@
-/* All Rights Reserved. Ilgamos International 2017© */
+/* All Rights Reserved. ILCoin Blockchain Project 2019© */
 
 #ifndef _SECP256K1_ECMULT_CONST_
 #define _SECP256K1_ECMULT_CONST_

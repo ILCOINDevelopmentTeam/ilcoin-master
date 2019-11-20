@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2013-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 from __future__ import division,print_function,unicode_literals
 import biplist
 from ds_store import DSStore

@@ -3018,7 +3018,7 @@
         <translation>Připojovat se pouze k určeným uzlům; samotné -noconnect nebo -connect=0 zakáží automatické připojování</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Šířen pod softwarovou licencí MIT, viz přiložený soubor %s nebo %s</translation>
     </message>
     <message>

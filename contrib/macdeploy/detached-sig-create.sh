@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2014-2015 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 set -e
 

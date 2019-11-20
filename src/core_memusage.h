@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_CORE_MEMUSAGE_H
 #define ILCOIN_CORE_MEMUSAGE_H
@@ -59,6 +59,14 @@ static inline size_t RecursiveDynamicUsage(const CBlock& block) {
 }
 
 static inline size_t RecursiveDynamicUsage(const CBlock2& block) {
+    size_t mem = memusage::DynamicUsage(block.vtx);
+    for (const auto& tx : block.vtx) {
+        mem += memusage::DynamicUsage(tx) + RecursiveDynamicUsage(*tx);
+    }
+    return mem;
+}
+
+static inline size_t RecursiveDynamicUsage(const CBlock3& block) {
     size_t mem = memusage::DynamicUsage(block.vtx);
     for (const auto& tx : block.vtx) {
         mem += memusage::DynamicUsage(tx) + RecursiveDynamicUsage(*tx);

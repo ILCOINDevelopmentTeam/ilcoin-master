@@ -1,5 +1,5 @@
 // Copyright (c) 2014 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_CRYPTO_COMMON_H
 #define ILCOIN_CRYPTO_COMMON_H

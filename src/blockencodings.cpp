@@ -1,5 +1,5 @@
 // Copyright (c) 2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "blockencodings.h"
 #include "consensus/consensus.h"
@@ -28,6 +28,18 @@ CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock& block, bool f
     }
 }
 CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock2& block, bool fUseWTXID) :
+        nonce(GetRand(std::numeric_limits<uint64_t>::max())),
+        shorttxids(block.vtx.size() - 1), prefilledtxn(1), header(block) {
+    FillShortTxIDSelector();
+    message = block.message;
+    //TODO: Use our mempool prior to block acceptance to predictively fill more than just the coinbase
+    prefilledtxn[0] = {0, block.vtx[0]};
+    for (size_t i = 1; i < block.vtx.size(); i++) {
+        const CTransaction& tx = *block.vtx[i];
+        shorttxids[i - 1] = GetShortID(fUseWTXID ? tx.GetWitnessHash() : tx.GetHash());
+    }
+}
+CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock3& block, bool fUseWTXID) :
         nonce(GetRand(std::numeric_limits<uint64_t>::max())),
         shorttxids(block.vtx.size() - 1), prefilledtxn(1), header(block) {
     FillShortTxIDSelector();
@@ -229,6 +241,49 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock& block, const std::vector<
     return READ_STATUS_OK;
 }
 ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock2& block, const std::vector<CTransactionRef>& vtx_missing) {
+    assert(!header.IsNull());
+    uint256 hash = header.GetHash();
+    block = header;
+    block.vtx.resize(txn_available.size());
+
+    size_t tx_missing_offset = 0;
+    for (size_t i = 0; i < txn_available.size(); i++) {
+        if (!txn_available[i]) {
+            if (vtx_missing.size() <= tx_missing_offset)
+                return READ_STATUS_INVALID;
+            block.vtx[i] = vtx_missing[tx_missing_offset++];
+        } else
+            block.vtx[i] = std::move(txn_available[i]);
+    }
+
+    // Make sure we can't call FillBlock again.
+    header.SetNull();
+    txn_available.clear();
+
+    if (vtx_missing.size() != tx_missing_offset)
+        return READ_STATUS_INVALID;
+
+    CValidationState state;
+    // LogPrintf("%s - block.message: %s\n", __func__, block.message);
+    if (!CheckBlock(block, state, Params().GetConsensus())) {
+        // TODO: We really want to just check merkle tree manually here,
+        // but that is expensive, and CheckBlock caches a block's
+        // "checked-status" (in the CBlock?). CBlock should be able to
+        // check its own merkle root and cache that check.
+        if (state.CorruptionPossible())
+            return READ_STATUS_FAILED; // Possible Short ID collision
+        return READ_STATUS_CHECKBLOCK_FAILED;
+    }
+
+    LogPrint("cmpctblock", "Successfully reconstructed block %s with %lu txn prefilled, %lu txn from mempool (incl at least %lu from extra pool) and %lu txn requested\n", hash.ToString(), prefilled_count, mempool_count, extra_count, vtx_missing.size());
+    if (vtx_missing.size() < 5) {
+        for (const auto& tx : vtx_missing)
+            LogPrint("cmpctblock", "Reconstructed block %s required tx %s\n", hash.ToString(), tx->GetHash().ToString());
+    }
+
+    return READ_STATUS_OK;
+}
+ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock3& block, const std::vector<CTransactionRef>& vtx_missing) {
     assert(!header.IsNull());
     uint256 hash = header.GetHash();
     block = header;

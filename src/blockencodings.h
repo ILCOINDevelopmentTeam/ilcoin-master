@@ -1,5 +1,5 @@
 // Copyright (c) 2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_BLOCK_ENCODINGS_H
 #define ILCOIN_BLOCK_ENCODINGS_H
@@ -151,6 +151,7 @@ public:
 
     CBlockHeaderAndShortTxIDs(const CBlock& block, bool fUseWTXID);
     CBlockHeaderAndShortTxIDs(const CBlock2& block, bool fUseWTXID);
+    CBlockHeaderAndShortTxIDs(const CBlock3& block, bool fUseWTXID);
 
     uint64_t GetShortID(const uint256& txhash) const;
 
@@ -208,6 +209,7 @@ public:
     bool IsTxAvailable(size_t index) const;
     ReadStatus FillBlock(CBlock& block, const std::vector<CTransactionRef>& vtx_missing);
     ReadStatus FillBlock(CBlock2& block, const std::vector<CTransactionRef>& vtx_missing);
+    ReadStatus FillBlock(CBlock3& block, const std::vector<CTransactionRef>& vtx_missing);
 };
 
 #endif

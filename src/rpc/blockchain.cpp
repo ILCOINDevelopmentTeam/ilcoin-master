@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "amount.h"
 #include "chain.h"
@@ -196,15 +196,14 @@ UniValue blockToJSON(const CBlock2& block, const CBlockIndex* blockindex, bool t
     return result;
 }
 
-UniValue blockToJSON(const CBlock2& block, const CMiniBlockIndex* blockindex, bool txDetails = false)
+UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool txDetails = false)
 {
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
-    int difficulty = -1;
     // Only report confirmations if the block is on the main chain
-    // if (chainActive.Contains(blockindex))
-    //     confirmations = chainActive.Height() - blockindex->nHeight + 1;
+    if (chainActive.Contains(blockindex))
+        confirmations = chainActive.Height() - blockindex->nHeight + 1;
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("strippedsize", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS)));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
@@ -228,6 +227,74 @@ UniValue blockToJSON(const CBlock2& block, const CMiniBlockIndex* blockindex, bo
     }
     result.push_back(Pair("tx", txs));
 
+    std::stringstream miniblks(block.tracking);
+    std::string mb1;
+    UniValue mblks(UniValue::VARR);
+
+    while(std::getline(miniblks, mb1, '|'))
+    {
+       mblks.push_back(mb1);
+    }
+    result.push_back(Pair("miniblks", mblks));
+
+    result.push_back(Pair("time", block.GetBlockTime()));
+    result.push_back(Pair("mediantime", (int64_t)blockindex->GetMedianTimePast()));
+    result.push_back(Pair("nonce", (uint64_t)block.nNonce));
+    result.push_back(Pair("bits", strprintf("%08x", block.nBits)));
+    result.push_back(Pair("difficulty", GetDifficulty(blockindex)));
+    result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
+
+    if (blockindex->pprev)
+        result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
+    CBlockIndex *pnext = chainActive.Next(blockindex);
+    if (pnext)
+        result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
+    return result;
+}
+
+UniValue blockToJSON(const CBlock3& block, const CMiniBlockIndex* blockindex, bool txDetails = false)
+{
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
+    int confirmations = -1;
+    int difficulty = -1;
+    // Only report confirmations if the block is on the main chain
+    CBlockIndex* _parentblockindex = blockindex->pprev;
+    if (chainActive.Contains(_parentblockindex))
+        confirmations = chainActive.Height() - _parentblockindex->nHeight + 1;
+    result.push_back(Pair("confirmations", confirmations));
+    result.push_back(Pair("strippedsize", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS)));
+    result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
+    result.push_back(Pair("weight", (int)::GetBlockWeight(block)));
+    result.push_back(Pair("height", blockindex->nHeight));
+    result.push_back(Pair("version", block.nVersion));
+    result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
+    result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+
+    UniValue txs(UniValue::VARR);
+    for(const auto& tx : block.vtx)
+    {
+        if(txDetails)
+        {
+            UniValue objTx(UniValue::VOBJ);
+            TxToJSON(*tx, uint256(), objTx);
+            txs.push_back(objTx);
+        }
+        else
+            txs.push_back(tx->GetHash().GetHex());
+    }
+    result.push_back(Pair("tx", txs));
+
+    std::stringstream miniblks(block.tracking);
+    std::string mb1;
+    UniValue mblks(UniValue::VARR);
+
+    while(std::getline(miniblks, mb1, '|'))
+    {
+       mblks.push_back(mb1);
+    }
+    result.push_back(Pair("miniblks", mblks));
+
     result.push_back(Pair("time", block.GetBlockTime()));
     result.push_back(Pair("mediantime", (int64_t)blockindex->GetMedianTimePast()));
     result.push_back(Pair("nonce", (uint64_t)block.nNonce));
@@ -235,11 +302,18 @@ UniValue blockToJSON(const CBlock2& block, const CMiniBlockIndex* blockindex, bo
     result.push_back(Pair("difficulty", difficulty));
     result.push_back(Pair("chainwork", blockindex->nChainWork.GetHex()));
 
-    if (blockindex->pprev)
-        result.push_back(Pair("previousblockhash", blockindex->pprev->GetBlockHash().GetHex()));
-    // CBlockIndex *pnext = chainActive.Next(blockindex);
-    // if (pnext)
-        // result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
+    if (blockindex->pminiprev)
+        result.push_back(Pair("previousblockhash", blockindex->pminiprev->GetBlockHash().GetHex()));
+
+    if (blockindex->pprev){
+        result.push_back(Pair("parentblockhash", _parentblockindex->GetBlockHash().GetHex()));
+        result.push_back(Pair("parentblockheight", _parentblockindex->nHeight));
+    }
+
+    CMiniBlockIndex *pnext = miniChainActive.Next(blockindex);
+    if (pnext)
+        result.push_back(Pair("nextblockhash", pnext->GetBlockHash().GetHex()));
+
     return result;
 }
 
@@ -275,6 +349,23 @@ UniValue getbestblockhash(const JSONRPCRequest& request)
 
     LOCK(cs_main);
     return chainActive.Tip()->GetBlockHash().GetHex();
+}
+
+UniValue getbestminiblockhash(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "getbestminiblockhash\n"
+            "\nReturns the hash of the best (tip) block in the longest blockchain.\n"
+            "\nResult:\n"
+            "\"hex\"      (string) the block hash hex encoded\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getbestminiblockhash", "")
+            + HelpExampleRpc("getbestminiblockhash", "")
+        );
+
+    LOCK(cs_main);
+    return miniChainActive.Tip()->GetBlockHash().GetHex();
 }
 
 void RPCNotifyBlockChange(bool ibd, const CBlockIndex * pindex)
@@ -839,7 +930,25 @@ UniValue getblock(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
     int nHeight = pblockindex->nHeight;
-    if(nHeight > 218018){
+    if(nHeight > 305521){
+      CBlock3 block;
+      if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
+          throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+      if (!fVerbose)
+      {
+          CBlock block_clean = block;
+          block_clean.vtx.reserve(block.vtx.size());
+          block_clean.vtx = block.vtx;
+
+          CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
+          ssBlock << block_clean;
+          std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
+          return strHex;
+      }
+      return blockToJSON(block, pblockindex);
+    }
+    else if(nHeight > 218018){
       CBlock2 block;
       if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
           throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
@@ -933,7 +1042,7 @@ UniValue getminiblock(const JSONRPCRequest& request)
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
 
-    CBlock2 block;
+    CBlock3 block;
     if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
@@ -1551,7 +1660,6 @@ UniValue invalidateblock(const JSONRPCRequest& request)
             + HelpExampleRpc("invalidateblock", "\"blockhash\"")
         );
 
-    int nHeight = 0;
     std::string strHash = request.params[0].get_str();
     uint256 hash(uint256S(strHash));
     CValidationState state;
@@ -1562,12 +1670,21 @@ UniValue invalidateblock(const JSONRPCRequest& request)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex* pblockindex = mapBlockIndex[hash];
-        nHeight = pblockindex->nHeight;
         InvalidateBlock(state, Params(), pblockindex);
     }
 
     if (state.IsValid()) {
-      if(nHeight > 218018){
+      CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+      if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+          throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+      int nHeight = pblockindex->nHeight;
+      if(nHeight > 305521){
+        std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>();
+        ActivateBestChain(state, Params(), pblock);
+      }
+      else if(nHeight > 218018){
         std::shared_ptr<const CBlock2> pblock = std::shared_ptr<const CBlock2>();
         ActivateBestChain(state, Params(), pblock);
       }
@@ -1599,7 +1716,6 @@ UniValue reconsiderblock(const JSONRPCRequest& request)
             + HelpExampleRpc("reconsiderblock", "\"blockhash\"")
         );
 
-    int nHeight = 0;
     std::string strHash = request.params[0].get_str();
     uint256 hash(uint256S(strHash));
 
@@ -1609,12 +1725,21 @@ UniValue reconsiderblock(const JSONRPCRequest& request)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex* pblockindex = mapBlockIndex[hash];
-        nHeight = pblockindex->nHeight;
         ResetBlockFailureFlags(pblockindex);
     }
 
     CValidationState state;
-    if(nHeight > 218018){
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+
+    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+
+    int nHeight = pblockindex->nHeight;
+    if(nHeight > 305521){
+      std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>();
+      ActivateBestChain(state, Params(), pblock);
+    }
+    else if(nHeight > 218018){
       std::shared_ptr<const CBlock2> pblock = std::shared_ptr<const CBlock2>();
       ActivateBestChain(state, Params(), pblock);
     }
@@ -1635,6 +1760,7 @@ static const CRPCCommand commands[] =
   //  --------------------- ------------------------  -----------------------  ------ ----------
     { "blockchain",         "getblockchaininfo",      &getblockchaininfo,      true,  {} },
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
+    { "blockchain",         "getbestminiblockhash",   &getbestminiblockhash,   true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },
     { "blockchain",         "getblock",               &getblock,               true,  {"blockhash","verbose"} },
     { "blockchain",         "getminiblock",           &getminiblock,           true,  {"blockhash","verbose"} },

@@ -1,4 +1,4 @@
-/* All Rights Reserved. Ilgamos International 2017© */
+/* All Rights Reserved. ILCoin Blockchain Project 2019© */
 
 /****
  * Please do not link this file directly. It is not part of the libsecp256k1

@@ -1,5 +1,5 @@
 dnl Copyright (c) 2013-2015 The Ilcoin Core developers
-dnl All Rights Reserved. Ilgamos International 2017©
+dnl All Rights Reserved. ILCoin Blockchain Project 2019©
 
 AC_DEFUN([ILCOIN_FIND_BDB48],[
   AC_ARG_VAR(BDB_CFLAGS, [C compiler flags for BerkeleyDB, bypasses autodetection])

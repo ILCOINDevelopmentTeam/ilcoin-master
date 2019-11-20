@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 import re
 import fnmatch
@@ -458,7 +458,7 @@ def get_header_lines(header, start_year, end_year):
 
 CPP_HEADER = '''
 // Copyright (c) %s The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 
 def get_cpp_header_lines_to_insert(start_year, end_year):
@@ -466,7 +466,7 @@ def get_cpp_header_lines_to_insert(start_year, end_year):
 
 PYTHON_HEADER = '''
 # Copyright (c) %s The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 
 def get_python_header_lines_to_insert(start_year, end_year):

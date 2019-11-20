@@ -1,5 +1,5 @@
 @ vim: set tabstop=8 softtabstop=8 shiftwidth=8 noexpandtab syntax=armasm:
-/* All Rights Reserved. Ilgamos International 2017© */
+/* All Rights Reserved. ILCoin Blockchain Project 2019© */
 /*
 ARM implementation of field_10x26 inner loops.
 

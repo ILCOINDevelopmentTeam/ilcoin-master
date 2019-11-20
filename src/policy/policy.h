@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_POLICY_POLICY_H
 #define ILCOIN_POLICY_POLICY_H
@@ -14,19 +14,19 @@
 class CCoinsViewCache;
 
 /** Default for -blockmaxsize, which controls the maximum size of block the mining code will create **/
-static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 120000000; // JCOL
+static const unsigned int DEFAULT_BLOCK_MAX_SIZE = 250000000; // JCOL 750000
 /** Default for -blockmaxweight, which controls the range of block weights the mining code will create **/
-static const unsigned int DEFAULT_BLOCK_MAX_WEIGHT = 120000000; // JCOL 3000000
+static const unsigned int DEFAULT_BLOCK_MAX_WEIGHT = 125000000; // JCOL 3000000
 /** Default for -blockmintxfee, which sets the minimum feerate for a transaction in blocks created by mining code **/
 static const unsigned int DEFAULT_BLOCK_MIN_TX_FEE = 1000;
 /** The maximum weight for transactions we're willing to relay/mine */
-static const unsigned int MAX_STANDARD_TX_WEIGHT = 120000000; // JCOL 400000
+static const unsigned int MAX_STANDARD_TX_WEIGHT = 125000000; // JCOL 400000
 /** Maximum number of signature check operations in an IsStandard() P2SH script */
 static const unsigned int MAX_P2SH_SIGOPS = 15;
 /** The maximum number of sigops we're willing to relay/mine in a single tx */
 static const unsigned int MAX_STANDARD_TX_SIGOPS_COST = MAX_BLOCK_SIGOPS_COST/5;
 /** Default for -maxmempool, maximum megabytes of mempool memory usage */
-static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 3000; // JCOL 300
+static const unsigned int DEFAULT_MAX_MEMPOOL_SIZE = 6000; // JCOL 300
 /** Default for -incrementalrelayfee, which sets the minimum feerate increase for mempool limiting or BIP 125 replacement **/
 static const unsigned int DEFAULT_INCREMENTAL_RELAY_FEE = 1000;
 /** Default for -bytespersigop */

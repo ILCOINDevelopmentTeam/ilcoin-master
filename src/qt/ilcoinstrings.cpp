@@ -55,7 +55,7 @@ QT_TRANSLATE_NOOP("ilcoin-core", ""
 "Discover own IP addresses (default: 1 when listening and no -externalip or -"
 "proxy)"),
 QT_TRANSLATE_NOOP("ilcoin-core", ""
-"All Rights Reserved. Ilgamos International 2017©"),
+"All Rights Reserved. ILCoin Blockchain Project 2019©"),
 QT_TRANSLATE_NOOP("ilcoin-core", ""
 "Do not keep transactions in the mempool longer than <n> hours (default: %u)"),
 QT_TRANSLATE_NOOP("ilcoin-core", ""

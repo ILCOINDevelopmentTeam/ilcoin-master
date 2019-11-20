@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2014-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 """Test resurrection of mined transactions when the blockchain is re-organized."""
 
 from test_framework.test_framework import IlcoinTestFramework

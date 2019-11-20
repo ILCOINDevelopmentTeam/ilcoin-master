@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #if defined(HAVE_CONFIG_H)
 #include "config/ilcoin-config.h"
@@ -510,7 +510,7 @@ std::string LicenseInfo()
            "\n" +
            "\n" +
            _("This is experimental software.") + "\n" +
-           strprintf(_("All Rights Reserved. Ilgamos International 2017©")) + "\n" +
+           strprintf(_("All Rights Reserved. ILCoin Blockchain Project 2019©")) + "\n" +
            "\n" +
            strprintf(_("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard."), "<https://www.openssl.org>") +
            "\n";
@@ -656,7 +656,15 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
     int nHeight = chainActive.Height();
     LogPrintf("ActivateBestChain: nHeight %d\n", nHeight);
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
-    if(nHeight >= 218018){
+    if(nHeight >= 305521){
+      std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>();
+      CValidationState state;
+      if (!ActivateBestChain(state, chainparams, pblock)) {
+          LogPrintf("Failed to connect best block");
+          StartShutdown();
+      }
+    }
+    else if(nHeight >= 218018){
       std::shared_ptr<const CBlock2> pblock = std::shared_ptr<const CBlock2>();
       CValidationState state;
       if (!ActivateBestChain(state, chainparams, pblock)) {

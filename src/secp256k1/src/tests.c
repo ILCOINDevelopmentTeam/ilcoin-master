@@ -1,4 +1,4 @@
-/* All Rights Reserved. Ilgamos International 2017© */
+/* All Rights Reserved. ILCoin Blockchain Project 2019© */
 
 #if defined HAVE_CONFIG_H
 #include "libsecp256k1-config.h"

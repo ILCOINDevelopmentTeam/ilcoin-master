@@ -1,5 +1,5 @@
 // Copyright (c) 2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "paymentrequestplus.h" // this includes protobuf's port.h which defines its own bswap macos
 

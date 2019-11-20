@@ -1,6 +1,6 @@
 #!/bin/bash
 # Copyright (c) 2014-2015 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 if ! [[ "$2" =~ ^(git@)?(www.)?github.com(:|/)ilcoin/ilcoin(.git)?$ ]]; then
     exit 0

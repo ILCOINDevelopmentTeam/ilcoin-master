@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_NET_PROCESSING_H
 #define ILCOIN_NET_PROCESSING_H
@@ -35,9 +35,11 @@ public:
     virtual void UpdatedMiniBlockTip(const CMiniBlockIndex *pindexNew, const CMiniBlockIndex *pindexFork, bool fInitialDownload);
     virtual void BlockChecked(const CBlock& block, const CValidationState& state);
     virtual void BlockChecked2(const CBlock2& block, const CValidationState& state);
+    virtual void BlockChecked3(const CBlock3& block, const CValidationState& state);
     virtual void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& pblock);
     virtual void NewPoWValidBlock2(const CBlockIndex *pindex, const std::shared_ptr<const CBlock2>& pblock);
-    virtual void NewPoWValidBlock3(const CMiniBlockIndex *pindex, const std::shared_ptr<const CBlock2>& pblock);
+    virtual void NewPoWValidBlock3(const CMiniBlockIndex *pindex, const std::shared_ptr<const CBlock3>& pblock);
+    virtual void NewPoWValidBlock4(const CBlockIndex *pindex, const std::shared_ptr<const CBlock3>& pblock);
 };
 
 struct CNodeStateStats {

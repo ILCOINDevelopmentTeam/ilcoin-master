@@ -3014,7 +3014,7 @@
         <translation>Подключаться только к указанному узлу(ам); -noconnect или -connect=0 для запрета автоматических подключений</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Распространяется под лицензией MIT, см. приложенный файл %s или %s</translation>
     </message>
     <message>

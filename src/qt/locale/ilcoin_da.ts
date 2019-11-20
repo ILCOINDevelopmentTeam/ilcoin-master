@@ -3018,7 +3018,7 @@
         <translation>Forbind kun til de specificerede knuder; -noconnect eller -connect=0 alene for at deaktivere automatiske forbindelser</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Distribueret under MIT-softwarelicensen; se den vedlagte fil %s eller %s</translation>
     </message>
     <message>

@@ -1,6 +1,6 @@
 // Copyright 2014 BitPay Inc.
 // Copyright 2015 Ilcoin Core Developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include <stdint.h>
 #include <errno.h>

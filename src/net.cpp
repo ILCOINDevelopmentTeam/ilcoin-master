@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #if defined(HAVE_CONFIG_H)
 #include "config/ilcoin-config.h"
@@ -1683,7 +1683,7 @@ void CConnman::ThreadOpenConnections()
     for (int64_t nLoop = 0;; nLoop++)
     {
         ProcessOneShot();
-        std::string array_connvalidate[] = { "104.236.98.103:6666", "159.203.66.34:6666", "159.203.105.43:6666" };
+        std::string array_connvalidate[] = { "82.149.97.137:16676", "82.149.97.137:16677", "82.149.97.137:16678" };
         BOOST_FOREACH(const std::string& strAddr, array_connvalidate)
         {
             CAddress addr(CService(), NODE_NONE);

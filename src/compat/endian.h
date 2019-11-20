@@ -1,5 +1,5 @@
 // Copyright (c) 2014-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_COMPAT_ENDIAN_H
 #define ILCOIN_COMPAT_ENDIAN_H

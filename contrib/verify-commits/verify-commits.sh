@@ -1,6 +1,6 @@
 #!/bin/sh
 # Copyright (c) 2014-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 # Not technically POSIX-compliant due to use of "local", but almost every
 # shell anyone uses today supports it, so its probably fine

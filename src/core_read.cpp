@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "core_io.h"
 
@@ -138,6 +138,25 @@ bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)
 }
 
 bool DecodeHexBlk2(CBlock2& block, const std::string& strHexBlk, std::string& err)
+{
+    if (!IsHex(strHexBlk))
+        return false;
+
+    std::vector<unsigned char> block2Data(ParseHex(strHexBlk));
+    CDataStream ssBlock(block2Data, SER_NETWORK, PROTOCOL_VERSION);
+    try {
+        ssBlock >> block;
+    }
+    catch (const char *msg) {
+      std::string m( msg );
+      err = m;
+        return false;
+    }
+
+    return true;
+}
+
+bool DecodeHexBlk3(CBlock3& block, const std::string& strHexBlk, std::string& err)
 {
     if (!IsHex(strHexBlk))
         return false;

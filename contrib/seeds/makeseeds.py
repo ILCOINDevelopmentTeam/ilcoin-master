@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2013-2017 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 #
 # Generate seeds.txt from Pieter's DNS seeder
 #

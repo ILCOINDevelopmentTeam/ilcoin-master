@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2012-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 Extract _("...") strings for translation and convert to Qt stringdefs so that
 they can be picked up by Qt linguist.

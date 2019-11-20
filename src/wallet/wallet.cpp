@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "wallet/wallet.h"
 
@@ -1502,7 +1502,25 @@ CBlockIndex* CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool f
                 ShowProgress(_("Rescanning..."), std::max(1, std::min(99, (int)((GuessVerificationProgress(chainParams.TxData(), pindex) - dProgressStart) / (dProgressTip - dProgressStart) * 100))));
 
             int nHeight = pindex->nHeight;
-            if(nHeight > 218018){
+            if(nHeight > 305521){
+              CBlock3 block;
+              if (ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
+                  for (size_t posInBlock = 0; posInBlock < block.vtx.size(); ++posInBlock) {
+                      AddToWalletIfInvolvingMe(*block.vtx[posInBlock], pindex, posInBlock, fUpdate);
+                  }
+                  if (!ret) {
+                      ret = pindex;
+                  }
+              } else {
+                  ret = nullptr;
+              }
+              pindex = chainActive.Next(pindex);
+              if (GetTime() >= nNow + 60) {
+                  nNow = GetTime();
+                  LogPrintf("Still rescanning. At block %d. Progress=%f\n", pindex->nHeight, GuessVerificationProgress(chainParams.TxData(), pindex));
+              }
+            }
+            else if(nHeight > 218018){
               CBlock2 block;
               if (ReadBlockFromDisk(block, pindex, Params().GetConsensus())) {
                   for (size_t posInBlock = 0; posInBlock < block.vtx.size(); ++posInBlock) {

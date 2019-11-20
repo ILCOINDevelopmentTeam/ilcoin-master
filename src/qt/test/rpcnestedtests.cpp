@@ -1,5 +1,5 @@
 // Copyright (c) 2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "rpcnestedtests.h"
 
@@ -53,7 +53,12 @@ void RPCNestedTests::rpcNestedTests()
     {
         CValidationState state;
         int nHeight = chainActive.Height();
-        if(nHeight > 218018){
+        if(nHeight > 305521){
+          std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>();
+          bool ok = ActivateBestChain(state, chainparams, pblock);
+          QVERIFY(ok);
+        }
+        else if(nHeight > 218018){
           std::shared_ptr<const CBlock2> pblock = std::shared_ptr<const CBlock2>();
           bool ok = ActivateBestChain(state, chainparams, pblock);
           QVERIFY(ok);

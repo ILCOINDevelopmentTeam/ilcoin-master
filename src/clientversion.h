@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_CLIENTVERSION_H
 #define ILCOIN_CLIENTVERSION_H
@@ -14,9 +14,9 @@
 
 //! These need to be macros, as clientversion.cpp's and ilcoin*-res.rc's voodoo requires it
 #define CLIENT_VERSION_MAJOR 0
-#define CLIENT_VERSION_MINOR 15
-#define CLIENT_VERSION_REVISION 9
-#define CLIENT_VERSION_BUILD 01
+#define CLIENT_VERSION_MINOR 16
+#define CLIENT_VERSION_REVISION 0
+#define CLIENT_VERSION_BUILD 0
 
 //! Set to true for release, false for prerelease or test build
 #define CLIENT_VERSION_IS_RELEASE false

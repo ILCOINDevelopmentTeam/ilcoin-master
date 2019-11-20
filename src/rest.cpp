@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "chain.h"
 #include "chainparams.h"
@@ -57,6 +57,7 @@ struct CCoin {
 extern void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry);
 extern UniValue blockToJSON(const CBlock& block, const CBlockIndex* blockindex, bool txDetails = false);
 extern UniValue blockToJSON(const CBlock2& block, const CBlockIndex* blockindex, bool txDetails = false);
+extern UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool txDetails = false);
 extern UniValue mempoolInfoToJSON();
 extern UniValue mempoolToJSON(bool fVerbose = false);
 extern void ScriptPubKeyToJSON(const CScript& scriptPubKey, UniValue& out, bool fIncludeHex);
@@ -221,7 +222,43 @@ static bool rest_block(HTTPRequest* req,
             return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not available (pruned data)");
 
         int nHeight = pblockindex->nHeight;
-        if(nHeight > 218018){
+        if(nHeight > 305521){
+          CBlock3 block;
+          if (!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
+              return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
+
+          CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
+          ssBlock << block;
+
+          switch (rf) {
+            case RF_BINARY: {
+                std::string binaryBlock = ssBlock.str();
+                req->WriteHeader("Content-Type", "application/octet-stream");
+                req->WriteReply(HTTP_OK, binaryBlock);
+                return true;
+            }
+
+            case RF_HEX: {
+                std::string strHex = HexStr(ssBlock.begin(), ssBlock.end()) + "\n";
+                req->WriteHeader("Content-Type", "text/plain");
+                req->WriteReply(HTTP_OK, strHex);
+                return true;
+            }
+
+            case RF_JSON: {
+                UniValue objBlock = blockToJSON(block, pblockindex, showTxDetails);
+                std::string strJSON = objBlock.write() + "\n";
+                req->WriteHeader("Content-Type", "application/json");
+                req->WriteReply(HTTP_OK, strJSON);
+                return true;
+            }
+
+            default: {
+                return RESTERR(req, HTTP_NOT_FOUND, "output format not found (available: " + AvailableDataFormatsString() + ")");
+            }
+          }
+        }
+        else if(nHeight > 218018){
           CBlock2 block;
           if (!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
               return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");

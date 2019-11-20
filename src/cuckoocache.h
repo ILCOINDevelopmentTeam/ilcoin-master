@@ -1,5 +1,5 @@
 // Copyright (c) 2016 Jeremy Rubin
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef _ILCOIN_CUCKOOCACHE_H_
 #define _ILCOIN_CUCKOOCACHE_H_

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2014 Wladimir J. van der Laan
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 A script to check that the (Linux) executables produced by gitian only contain
 allowed gcc, glibc and libstdc++ version symbols.  This makes sure they are

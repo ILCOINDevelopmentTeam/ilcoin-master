@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_VALIDATIONINTERFACE_H
 #define ILCOIN_VALIDATIONINTERFACE_H
@@ -11,6 +11,7 @@
 
 class CBlock;
 class CBlock2;
+class CBlock3;
 class CBlockIndex;
 class CMiniBlockIndex;
 struct CBlockLocator;
@@ -43,11 +44,13 @@ protected:
     virtual void ResendWalletTransactions(int64_t nBestBlockTime, CConnman* connman) {}
     virtual void BlockChecked(const CBlock&, const CValidationState&) {}
     virtual void BlockChecked2(const CBlock2&, const CValidationState&) {}
+    virtual void BlockChecked3(const CBlock3&, const CValidationState&) {}
     virtual void GetScriptForMining(boost::shared_ptr<CReserveScript>&) {};
     virtual void ResetRequestCount(const uint256 &hash) {};
     virtual void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock>& block) {};
     virtual void NewPoWValidBlock2(const CBlockIndex *pindex, const std::shared_ptr<const CBlock2>& block) {};
-    virtual void NewPoWValidBlock3(const CMiniBlockIndex *pindex, const std::shared_ptr<const CBlock2>& block) {};
+    virtual void NewPoWValidBlock3(const CMiniBlockIndex *pindex, const std::shared_ptr<const CBlock3>& block) {};
+    virtual void NewPoWValidBlock4(const CBlockIndex *pindex, const std::shared_ptr<const CBlock3>& block) {};
     friend void ::RegisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterValidationInterface(CValidationInterface*);
     friend void ::UnregisterAllValidationInterfaces();
@@ -80,6 +83,7 @@ struct CMainSignals {
     /** Notifies listeners of a block validation result */
     boost::signals2::signal<void (const CBlock&, const CValidationState&)> BlockChecked;
     boost::signals2::signal<void (const CBlock2&, const CValidationState&)> BlockChecked2;
+    boost::signals2::signal<void (const CBlock3&, const CValidationState&)> BlockChecked3;
     /** Notifies listeners that a key for mining is required (coinbase) */
     boost::signals2::signal<void (boost::shared_ptr<CReserveScript>&)> ScriptForMining;
     /** Notifies listeners that a block has been successfully mined */
@@ -89,7 +93,8 @@ struct CMainSignals {
      * has been received and connected to the headers tree, though not validated yet */
     boost::signals2::signal<void (const CBlockIndex *, const std::shared_ptr<const CBlock>&)> NewPoWValidBlock;
     boost::signals2::signal<void (const CBlockIndex *, const std::shared_ptr<const CBlock2>&)> NewPoWValidBlock2;
-    boost::signals2::signal<void (const CMiniBlockIndex *, const std::shared_ptr<const CBlock2>&)> NewPoWValidBlock3;
+    boost::signals2::signal<void (const CMiniBlockIndex *, const std::shared_ptr<const CBlock3>&)> NewPoWValidBlock3;
+    boost::signals2::signal<void (const CBlockIndex *, const std::shared_ptr<const CBlock3>&)> NewPoWValidBlock4;
 };
 
 CMainSignals& GetMainSignals();

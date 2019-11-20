@@ -1,5 +1,5 @@
 // Copyright (c) 2015-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "chainparams.h"
 #include "streams.h"
@@ -181,7 +181,17 @@ bool CZMQPublishRawBlockNotifier::NotifyBlock(const CBlockIndex *pindex)
     {
         LOCK(cs_main);
         int nHeight = pindex->nHeight;
-        if(nHeight > 218018){
+        if(nHeight > 305521){
+          CBlock3 block;
+          if(!ReadBlockFromDisk(block, pindex, consensusParams))
+          {
+              zmqError("Can't read block from disk");
+              return false;
+          }
+
+          ss << block;
+        }
+        else if(nHeight > 218018){
           CBlock2 block;
           if(!ReadBlockFromDisk(block, pindex, consensusParams))
           {

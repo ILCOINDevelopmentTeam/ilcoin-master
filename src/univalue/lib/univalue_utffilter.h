@@ -1,5 +1,5 @@
 // Copyright 2016 Wladimir J. van der Laan
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 #ifndef UNIVALUE_UTFFILTER_H
 #define UNIVALUE_UTFFILTER_H
 

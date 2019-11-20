@@ -3018,7 +3018,7 @@
         <translation>Se connecter seulement aux nœuds précisés ; -noconnect ou -connect=0 seul pour désactiver les connexions automatiques</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Distribué sous la licence MIT d'utilisation d'un logiciel. Consulter le fichier joint %s ou %s</translation>
     </message>
     <message>

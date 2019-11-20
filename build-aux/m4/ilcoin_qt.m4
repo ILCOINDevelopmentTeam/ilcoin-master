@@ -1,5 +1,5 @@
 dnl Copyright (c) 2013-2016 The Ilcoin Core developers
-dnl All Rights Reserved. Ilgamos International 2017©
+dnl All Rights Reserved. ILCoin Blockchain Project 2019©
 
 dnl Helper for cases where a qt dependency is not met.
 dnl Output: If qt version is auto, set ilcoin_enable_qt to false. Else, exit.

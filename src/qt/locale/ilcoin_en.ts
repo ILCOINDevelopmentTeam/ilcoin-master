@@ -3903,7 +3903,7 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

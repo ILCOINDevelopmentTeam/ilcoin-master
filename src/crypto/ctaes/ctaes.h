@@ -1,4 +1,4 @@
- /* All Rights Reserved. Ilgamos International 2017© */
+ /* All Rights Reserved. ILCoin Blockchain Project 2019© */
 
 #ifndef _CTAES_H_
 #define _CTAES_H_ 1

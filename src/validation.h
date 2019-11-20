@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_VALIDATION_H
 #define ILCOIN_VALIDATION_H
@@ -82,6 +82,10 @@ static const int MAX_SCRIPTCHECK_THREADS = 16;
 static const int DEFAULT_SCRIPTCHECK_THREADS = 0;
 /** Number of blocks that can be requested at any given time from a single peer. */
 static const int MAX_BLOCKS_IN_TRANSIT_PER_PEER = 16;
+/** Number of miniblocks that can be requested at any given time from a single peer. */
+static const int MAX_MINI_BLOCKS_IN_TRANSIT_PER_PEER = 2;
+/** Number of miniblocks Inv that can be requested at any given time from a single peer. */
+static const int MAX_MINI_BLOCKS_INV_PER_PEER = 6;
 /** Timeout in seconds during which a peer must stall block download progress before being disconnected. */
 static const unsigned int BLOCK_STALLING_TIMEOUT = 2;
 /** Number of headers sent in one getheaders result. We rely on the assumption that if a peer sends
@@ -109,7 +113,7 @@ static const unsigned int AVG_LOCAL_ADDRESS_BROADCAST_INTERVAL = 24 * 24 * 60;
 static const unsigned int AVG_ADDRESS_BROADCAST_INTERVAL = 30;
 /** Average delay between trickled inventory transmissions in seconds.
  *  Blocks and whitelisted receivers bypass this, outbound peers get half this delay. */
-static const unsigned int INVENTORY_BROADCAST_INTERVAL = 5;
+static const unsigned int INVENTORY_BROADCAST_INTERVAL = 25;
 /** Maximum number of inventory items to send per transmission.
  *  Limits the impact of low-fee transaction floods. */
 static const unsigned int INVENTORY_BROADCAST_MAX = 7 * INVENTORY_BROADCAST_INTERVAL;
@@ -119,8 +123,10 @@ static const unsigned int AVG_FEEFILTER_BROADCAST_INTERVAL = 10 * 60;
 static const unsigned int MAX_FEEFILTER_CHANGE_DELAY = 5 * 60;
 /** Block download timeout base, expressed in millionths of the block interval (i.e. 10 min) */
 static const int64_t BLOCK_DOWNLOAD_TIMEOUT_BASE = 1000000;
-/** Additional block download timeout per parallel downloading peer (i.e. 5 min) */
+/** Additional block download timeout per parallel downloading peer (i.e. 8 min) */
 static const int64_t BLOCK_DOWNLOAD_TIMEOUT_PER_PEER = 500000;
+/** Additional miniblock download timeout per parallel downloading peer (i.e. 10 min) */
+static const int64_t MINI_BLOCK_DOWNLOAD_TIMEOUT = 10 * 60;
 
 static const int64_t DEFAULT_MAX_TIP_AGE = 24 * 60 * 60;
 /** Maximum age of our tip in seconds for us to be considered current for fee estimation */
@@ -234,7 +240,8 @@ static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
  */
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool* fNewBlock);
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock2> pblock, bool fForceProcessing, bool* fNewBlock);
-bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock2> pblock, bool fForceProcessing, bool fNewBlock);
+bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock);
+bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool* fNewBlock);
 
 /**
  * Process incoming block headers.
@@ -279,15 +286,19 @@ bool IsInitialBlockDownload();
 std::string GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
+/** Notify new miniblock header*/
+void NotifyHeaderMiniTip(int nHeight);
 /** Find the best known block, and make it the tip of the block chain */
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock2> pblock = std::shared_ptr<const CBlock2>());
+bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>());
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, bool init);
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);
+double GuessVerificationProgress(const ChainTxData& data, CMiniBlockIndex* pindex, int nHeight);
 
 /**
  * Prune block and undo files (blk???.dat and undo???.dat) so that the disk space used is less than a user-defined target.
@@ -479,12 +490,22 @@ public:
 /** Functions for disk access for blocks */
 bool WriteBlockToDisk(const CBlock& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
 bool WriteBlockToDisk(const CBlock2& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
+bool WriteBlockToDisk(const CBlock3& block, CDiskBlockPos& pos, const CMessageHeader::MessageStartChars& messageStart);
+
 bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
 bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
+
 bool ReadBlockFromDisk(CBlock2& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
-bool ReadMiniBlockFromDisk(CBlock2& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
 bool ReadBlockFromDisk(CBlock2& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
-bool ReadBlockFromDisk(CBlock2& block, const CMiniBlockIndex* pindex, const Consensus::Params& consensusParams);
+
+bool ReadMiniBlockFromDisk(CBlock3& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
+bool ReadBlockFromDisk(CBlock3& block, const CMiniBlockIndex* pindex, const Consensus::Params& consensusParams);
+
+bool ReadBlockFromDisk(CBlock3& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
+bool ReadBlockFromDisk(CBlock3& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
+
+bool ReadBlockFromDiskCheck(CBlock3& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
+bool ReadBlockFromDiskCheck(CBlock3& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
 
 /** Functions for validating blocks and updating the block tree */
 
@@ -492,12 +513,14 @@ bool ReadBlockFromDisk(CBlock2& block, const CMiniBlockIndex* pindex, const Cons
 bool CheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true);
 bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 bool CheckBlock(const CBlock2& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+bool CheckBlock(const CBlock3& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
  *  set; UTXO-related validity checks are done in ConnectBlock(). */
 bool ContextualCheckBlockHeader(const CBlockHeader& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev, int64_t nAdjustedTime);
 bool ContextualCheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
 bool ContextualCheckBlock(const CBlock2& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
+bool ContextualCheckBlock(const CBlock3& block, CValidationState& state, const Consensus::Params& consensusParams, const CBlockIndex* pindexPrev);
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
  *  Validity checks that depend on the UTXO set are also done; ConnectBlock()
@@ -506,14 +529,17 @@ bool ConnectBlock(const CBlock& block, CValidationState& state, CBlockIndex* pin
                   const CChainParams& chainparams, bool fJustCheck = false);
 bool ConnectBlock(const CBlock2& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
                   const CChainParams& chainparams, bool fJustCheck = false);
-bool ConnectMiniBlock(const CBlock2& block, CValidationState& state, CBlockIndex* pindex, CMiniBlockIndex* pminiindex, CCoinsViewCache& coins,
+bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex* pindex, CMiniBlockIndex* pminiindex, CCoinsViewCache& coins,
                   const CChainParams& chainparams, bool fJustCheck = false, bool fNewBlock = true);
+bool ConnectBlock(const CBlock3& block, CValidationState& state, CBlockIndex* pindex, CCoinsViewCache& coins,
+                  const CChainParams& chainparams, bool fJustCheck = false);
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
  *  In case pfClean is provided, operation will try to be tolerant about errors, and *pfClean
  *  will be true if no problems were found. Otherwise, the return value will be false in case
  *  of problems. Note that in any case, coins may be modified. */
 bool DisconnectBlock(const CBlock& block, CValidationState& state, const CBlockIndex* pindex, CCoinsViewCache& coins, bool* pfClean = NULL);
 bool DisconnectBlock(const CBlock2& block, CValidationState& state, const CBlockIndex* pindex, CCoinsViewCache& coins, bool* pfClean = NULL);
+bool DisconnectBlock(const CBlock3& block, CValidationState& state, const CBlockIndex* pindex, CCoinsViewCache& coins, bool* pfClean = NULL);
 
 /** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
@@ -527,10 +553,12 @@ bool RewindBlockIndex(const CChainParams& params);
 /** Update uncommitted block structures (currently: only the witness nonce). This is safe for submitted blocks. */
 void UpdateUncommittedBlockStructures(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
 void UpdateUncommittedBlockStructures(CBlock2& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
+void UpdateUncommittedBlockStructures(CBlock3& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
 
 /** Produce the necessary coinbase commitment for a block (modifies the hash, don't call for mined blocks). */
 std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
 std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock2& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
+std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock3& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
 
 /** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
 class CVerifyDB {

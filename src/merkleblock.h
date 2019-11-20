@@ -1,6 +1,6 @@
 // Copyright (c) 2009-2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_MERKLEBLOCK_H
 #define ILCOIN_MERKLEBLOCK_H
@@ -139,10 +139,12 @@ public:
      */
     CMerkleBlock(const CBlock& block, CBloomFilter& filter);
     CMerkleBlock(const CBlock2& block, CBloomFilter& filter);
+    CMerkleBlock(const CBlock3& block, CBloomFilter& filter);
 
     // Create from a CBlock, matching the txids in the set
     CMerkleBlock(const CBlock& block, const std::set<uint256>& txids);
     CMerkleBlock(const CBlock2& block, const std::set<uint256>& txids);
+    CMerkleBlock(const CBlock3& block, const std::set<uint256>& txids);
 
     CMerkleBlock() {}
 

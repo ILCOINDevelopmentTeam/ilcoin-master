@@ -1,6 +1,6 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "base58.h"
 #include "clientversion.h"
@@ -91,6 +91,7 @@ UniValue getinfo(const JSONRPCRequest& request)
     }
 #endif
     obj.push_back(Pair("blocks",        (int)chainActive.Height()));
+    obj.push_back(Pair("miniblocks",    (int)miniChainActive.Height()));
     obj.push_back(Pair("timeoffset",    GetTimeOffset()));
     if(g_connman)
         obj.push_back(Pair("connections",   (int)g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL)));

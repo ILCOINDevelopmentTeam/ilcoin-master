@@ -3014,7 +3014,7 @@
         <translation>-noconnect ile yalnızca belirtilen düğümleri bağlayın veya yalnız otomatik bağlantıları devre dışı bırakmak için -connect=0 kullanın.</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>MIT yazılım lisansı altında dağıtılmıştır, beraberindeki %s ya da %s dosyasına bakınız.</translation>
     </message>
     <message>

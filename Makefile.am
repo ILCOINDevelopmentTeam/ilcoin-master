@@ -1,5 +1,5 @@
 # Copyright (c) 2013-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 
 ACLOCAL_AMFLAGS = -I build-aux/m4
 SUBDIRS = src

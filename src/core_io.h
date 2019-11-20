@@ -1,5 +1,5 @@
 // Copyright (c) 2009-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #ifndef ILCOIN_CORE_IO_H
 #define ILCOIN_CORE_IO_H
@@ -9,6 +9,7 @@
 
 class CBlock;
 class CBlock2;
+class CBlock3;
 class CScript;
 class CTransaction;
 struct CMutableTransaction;
@@ -21,6 +22,7 @@ std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDeco
 bool DecodeHexTx(CMutableTransaction& tx, const std::string& strHexTx, bool fTryNoWitness = false);
 bool DecodeHexBlk(CBlock&, const std::string& strHexBlk);
 bool DecodeHexBlk2(CBlock2&, const std::string& strHexBlk, std::string& err);
+bool DecodeHexBlk3(CBlock3&, const std::string& strHexBlk, std::string& err);
 uint256 ParseHashUV(const UniValue& v, const std::string& strName);
 uint256 ParseHashStr(const std::string&, const std::string& strName);
 std::vector<unsigned char> ParseHexUV(const UniValue& v, const std::string& strName);

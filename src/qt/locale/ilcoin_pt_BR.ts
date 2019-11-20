@@ -3014,7 +3014,7 @@
         <translation>Conectar somente a nós específicos; -noconnect ou -connect=0 sozinhos para desativar conecções automáticas</translation>
     </message>
     <message>
-        <source>All Rights Reserved. Ilgamos International 2017©</source>
+        <source>All Rights Reserved. ILCoin Blockchain Project 2019©</source>
         <translation>Distribuído sob a MIT software license, veja o arquivo %s ou %s</translation>
     </message>
     <message>

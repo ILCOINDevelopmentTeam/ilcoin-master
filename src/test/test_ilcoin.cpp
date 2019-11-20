@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2016 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #define BOOST_TEST_MODULE Ilcoin Test Suite
 
@@ -72,7 +72,12 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         {
             CValidationState state;
             int nHeight = chainActive.Height();
-            if(nHeight > 218018){
+            if(nHeight > 305521){
+              std::shared_ptr<const CBlock3> pblock = std::shared_ptr<const CBlock3>();
+              bool ok = ActivateBestChain(state, chainparams, pblock);
+              BOOST_REQUIRE(ok);
+            }
+            else if(nHeight > 218018){
               std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>();
               bool ok = ActivateBestChain(state, chainparams, pblock);
               BOOST_REQUIRE(ok);

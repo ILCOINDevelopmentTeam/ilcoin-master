@@ -1,5 +1,5 @@
 // Copyright (c) 2011-2013 The Ilcoin Core developers
-// All Rights Reserved. Ilgamos International 2017©
+// All Rights Reserved. ILCoin Blockchain Project 2019©
 
 #include "macdockiconhandler.h"
 

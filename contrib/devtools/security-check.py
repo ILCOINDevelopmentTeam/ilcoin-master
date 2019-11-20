@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2015-2016 The Ilcoin Core developers
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 Perform basic ELF security checks on a series of executables.
 Exit status will be 0 if successful, and the program will be silent.

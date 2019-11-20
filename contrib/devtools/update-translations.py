@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright (c) 2014 Wladimir J. van der Laan
-# All Rights Reserved. Ilgamos International 2017©
+# All Rights Reserved. ILCoin Blockchain Project 2019©
 '''
 Run this script from the root of the repository to update all translations from
 transifex.
