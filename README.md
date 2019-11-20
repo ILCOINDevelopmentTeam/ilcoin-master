@@ -3,7 +3,7 @@ ILCoin Core integration
 
 
 
-https://ilcoincrypto.com/#/
+https://ilcoincrypto.com/
 
 What is ILCoin?
 ----------------
