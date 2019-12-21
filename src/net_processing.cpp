@@ -2114,7 +2114,9 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               bool fNewBlock = false;
               _pblock->message = it->second.message;
               _pblock->tracking = it->second.tracking;
-              ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock);
+
+              bool fForceTip = !miniChainActive.Tip();
+              ProcessNewBlock(chainparams, _pblock, forceProcessing, &fNewBlock, fForceTip);
               LogPrintf("ProcessNewBlock %s peer=%d fNewBlock=%s\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"));
               if (fNewBlock) _pfrom->nLastBlockTime = GetTime();
 

@@ -6229,7 +6229,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
     // LogPrintf("ProcessNewBlock() OK!\n");
     return true;
 }
-bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool *fNewBlock)
+bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool *fNewBlock, bool fForceTip)
 {
     {
         CBlockIndex *pindex = NULL;
@@ -6256,7 +6256,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     NotifyHeaderTip();
 
-    if(pblock->tracking == "none"){
+    if(pblock->tracking == "none" || IsInitialBlockDownload() || fForceTip){
       CValidationState state; // Only used to report errors, not invalidity - ignore it
       // LogPrintf("%s - pblock->message: %s\n", __func__, pblock->message);
       if (!ActivateBestChain(state, chainparams, pblock))
