@@ -1680,22 +1680,43 @@ void CConnman::ThreadOpenConnections()
     }
 
     // Connect to specific addresses
-    for (int64_t nLoop = 0;; nLoop++)
+    if (mapMultiArgs.count("-connvalidate") && mapMultiArgs.at("-connvalidate").size() > 0)
     {
-        ProcessOneShot();
-        std::string array_connvalidate[] = { "82.149.97.137:16676", "82.149.97.137:16677", "82.149.97.137:16678" };
-        BOOST_FOREACH(const std::string& strAddr, array_connvalidate)
+        for (int64_t nLoop = 0;; nLoop++)
         {
-            CAddress addr(CService(), NODE_NONE);
-            OpenNetworkConnection(addr, false, NULL, strAddr.c_str(), false, false, false, true);
-            for (int i = 0; i < 10 && i < nLoop; i++)
+            ProcessOneShot();
+            BOOST_FOREACH(const std::string& strAddr, mapMultiArgs.at("-connvalidate"))
             {
-                if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
-                    return;
+                CAddress addr(CService(), NODE_NONE);
+                OpenNetworkConnection(addr, false, NULL, strAddr.c_str(), false, false, false, true);
+                for (int i = 0; i < 10 && i < nLoop; i++)
+                {
+                    if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
+                        return;
+                }
             }
+            if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
+                return;
         }
-        if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
-            return;
+    }
+    else {      
+      for (int64_t nLoop = 0;; nLoop++)
+      {
+          ProcessOneShot();
+          std::string array_connvalidate[] = { "82.149.97.137:16676", "82.149.97.137:16677", "82.149.97.137:16678" };
+          BOOST_FOREACH(const std::string& strAddr, array_connvalidate)
+          {
+              CAddress addr(CService(), NODE_NONE);
+              OpenNetworkConnection(addr, false, NULL, strAddr.c_str(), false, false, false, true);
+              for (int i = 0; i < 10 && i < nLoop; i++)
+              {
+                  if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
+                      return;
+              }
+          }
+          if (!interruptNet.sleep_for(std::chrono::milliseconds(500)))
+              return;
+      }
     }
 
     // Initiate network connections

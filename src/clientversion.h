@@ -15,11 +15,11 @@
 //! These need to be macros, as clientversion.cpp's and ilcoin*-res.rc's voodoo requires it
 #define CLIENT_VERSION_MAJOR 0
 #define CLIENT_VERSION_MINOR 16
-#define CLIENT_VERSION_REVISION 0
+#define CLIENT_VERSION_REVISION 01
 #define CLIENT_VERSION_BUILD 0
 
 //! Set to true for release, false for prerelease or test build
-#define CLIENT_VERSION_IS_RELEASE false
+#define CLIENT_VERSION_IS_RELEASE true
 
 /**
  * Copyright year (2009-this)
@@ -37,7 +37,7 @@
 #define DO_STRINGIZE(X) #X
 
 //! Copyright string used in Windows .rc files
-#define COPYRIGHT_STR "2009-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS_FINAL
+#define COPYRIGHT_STR "2015-" STRINGIZE(COPYRIGHT_YEAR) " " COPYRIGHT_HOLDERS_FINAL
 
 /**
  * ilcoind-res.rc includes this file, but it cannot cope with real c++ code.

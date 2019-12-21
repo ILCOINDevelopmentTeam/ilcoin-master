@@ -6256,15 +6256,19 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     NotifyHeaderTip();
 
-    CValidationState state; // Only used to report errors, not invalidity - ignore it
-    // LogPrintf("%s - pblock->message: %s\n", __func__, pblock->message);
-    if (!ActivateBestChain(state, chainparams, pblock))
-        return error("%s: ActivateBestChain failed", __func__);
-    // LogPrintf("ProcessNewBlock() OK!\n");
+    if(pblock->tracking == "none"){
+      CValidationState state; // Only used to report errors, not invalidity - ignore it
+      // LogPrintf("%s - pblock->message: %s\n", __func__, pblock->message);
+      if (!ActivateBestChain(state, chainparams, pblock))
+          return error("%s: ActivateBestChain failed", __func__);
+      // LogPrintf("ProcessNewBlock() OK!\n");
+    }
+
     return true;
 }
 bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock)
 {
+    CBlockIndex *pprevindex = NULL;
     {
         CMiniBlockIndex *pindex = NULL;
         CValidationState state;
@@ -6279,7 +6283,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         // LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
 
         bool rv = true;
-        CBlockIndex *pprevindex = pindex->pprev;
+        pprevindex = pindex->pprev;
         // This notify the transactions of the new connected block
 
         CCoinsViewCache view(pcoinsTip);
@@ -6305,6 +6309,8 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
           }
           mempool.check(pcoinsTip);
 
+          NotifyHeaderTip();
+
           for (unsigned int i = 0; i < block.vtx.size(); i++)
               GetMainSignals().SyncTransaction(*block.vtx[i], pprevindex, i);
           // LogPrintf("ProcessNewBlock SyncTransaction() %d OK!\n", block.vtx.size());
@@ -6319,6 +6325,21 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pindex, pindex->pminiprev, fInitialDownload);
         uiInterface.NotifyBlockTip(fInitialDownload, chainActive.Tip());
+    }
+
+    if(pprevindex != NULL)
+    {
+        CBlock3 block3;
+        bool ret = ReadBlockFromDisk(block3, pprevindex, chainparams.GetConsensus());
+
+        std::shared_ptr<CBlock3> pblock3 = std::make_shared<CBlock3>();
+        *pblock3 = block3;
+
+        NotifyHeaderTip();
+
+        CValidationState state; // Only used to report errors, not invalidity - ignore it
+        if (!ActivateBestChain(state, chainparams, pblock3))
+            return error("%s: ActivateBestChain failed", __func__);
     }
 
     return true;
