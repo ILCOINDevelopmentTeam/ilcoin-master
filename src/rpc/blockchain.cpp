@@ -205,13 +205,11 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
     if (chainActive.Contains(blockindex))
         confirmations = chainActive.Height() - blockindex->nHeight + 1;
     result.push_back(Pair("confirmations", confirmations));
-    result.push_back(Pair("strippedsize", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS)));
-    result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
-    result.push_back(Pair("weight", (int)::GetBlockWeight(block)));
-    result.push_back(Pair("height", blockindex->nHeight));
-    result.push_back(Pair("version", block.nVersion));
-    result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
-    result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+
+    uint64_t strippedsize = (uint64_t)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+    uint64_t size = (uint64_t)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION);
+    uint64_t weight = (uint64_t)::GetBlockWeight(block);
+    uint64_t txsize = block.vtx.size();
 
     UniValue txs(UniValue::VARR);
     for(const auto& tx : block.vtx)
@@ -233,8 +231,36 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
 
     while(std::getline(miniblks, mb1, '|'))
     {
-       mblks.push_back(mb1);
+       if(mb1 == "none")
+       {
+         mblks.push_back(mb1);
+       }
+       else
+       {
+         uint256 hash_mb(uint256S(mb1));
+         CMiniBlockIndex* pblockindex_mb = mapMiniBlockIndex[hash_mb];
+         CBlock3 block_mb;
+         if(!ReadBlockFromDisk(block_mb, pblockindex_mb, Params().GetConsensus())) continue;
+
+         strippedsize += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+         size += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION);
+         weight += (uint64_t)::GetBlockWeight(block_mb);
+         txsize += block_mb.vtx.size();
+
+         mblks.push_back(mb1);
+       }
     }
+
+    result.push_back(Pair("strippedsize", strippedsize));
+    result.push_back(Pair("size", size));
+    result.push_back(Pair("weight", weight));
+    result.push_back(Pair("txsize", txsize));
+
+    result.push_back(Pair("height", blockindex->nHeight));
+    result.push_back(Pair("version", block.nVersion));
+    result.push_back(Pair("versionHex", strprintf("%08x", block.nVersion)));
+    result.push_back(Pair("merkleroot", block.hashMerkleRoot.GetHex()));
+
     result.push_back(Pair("miniblks", mblks));
 
     result.push_back(Pair("time", block.GetBlockTime()));
@@ -259,9 +285,8 @@ UniValue blockToJSON(const CBlock3& block, const CMiniBlockIndex* blockindex, bo
     int confirmations = -1;
     int difficulty = -1;
     // Only report confirmations if the block is on the main chain
-    CBlockIndex* _parentblockindex = blockindex->pprev;
-    if (chainActive.Contains(_parentblockindex))
-        confirmations = chainActive.Height() - _parentblockindex->nHeight + 1;
+    if (chainActive.Contains(blockindex->pprev))
+        confirmations = chainActive.Height() - blockindex->pprev->nHeight + 1;
     result.push_back(Pair("confirmations", confirmations));
     result.push_back(Pair("strippedsize", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS)));
     result.push_back(Pair("size", (int)::GetSerializeSize(block, SER_NETWORK, PROTOCOL_VERSION)));
@@ -306,8 +331,8 @@ UniValue blockToJSON(const CBlock3& block, const CMiniBlockIndex* blockindex, bo
         result.push_back(Pair("previousblockhash", blockindex->pminiprev->GetBlockHash().GetHex()));
 
     if (blockindex->pprev){
-        result.push_back(Pair("parentblockhash", _parentblockindex->GetBlockHash().GetHex()));
-        result.push_back(Pair("parentblockheight", _parentblockindex->nHeight));
+        result.push_back(Pair("parentblockhash", blockindex->pprev->GetBlockHash().GetHex()));
+        result.push_back(Pair("parentblockheight", blockindex->pprev->nHeight));
     }
 
     CMiniBlockIndex *pnext = miniChainActive.Next(blockindex);
@@ -1047,6 +1072,7 @@ UniValue getminiblock(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
 
     LogPrintf("getminiblock (hash): %s\n", hash.ToString());
+    LogPrintf("getminiblock (tracking): %s\n", block.tracking);
     LogPrintf("getminiblock (nVersion): %d\n", block.nVersion);
     LogPrintf("getminiblock (hashPrevBlock): %s\n", block.hashPrevBlock.ToString());
     LogPrintf("getminiblock (hashMerkleRoot): %s\n", block.hashMerkleRoot.ToString());
@@ -1056,13 +1082,16 @@ UniValue getminiblock(const JSONRPCRequest& request)
 
     if (!fVerbose)
     {
+        CBlock block_clean = block;
+        block_clean.vtx.reserve(block.vtx.size());
+        block_clean.vtx = block.vtx;
+
         CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
-        ssBlock << block;
+        ssBlock << block_clean;
         std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
         return strHex;
     }
-    return blockToJSON(block, pblockindex);
-
+    if(pblockindex) return blockToJSON(block, pblockindex);
     return "NULL";
 }
 

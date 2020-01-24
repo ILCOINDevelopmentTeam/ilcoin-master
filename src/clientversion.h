@@ -15,7 +15,7 @@
 //! These need to be macros, as clientversion.cpp's and ilcoin*-res.rc's voodoo requires it
 #define CLIENT_VERSION_MAJOR 0
 #define CLIENT_VERSION_MINOR 16
-#define CLIENT_VERSION_REVISION 01
+#define CLIENT_VERSION_REVISION 03
 #define CLIENT_VERSION_BUILD 0
 
 //! Set to true for release, false for prerelease or test build
