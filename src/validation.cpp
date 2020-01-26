@@ -3039,8 +3039,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
             const CCoins* coins = view.AccessCoins(tx->GetHash());
             if (coins && !coins->IsPruned()) {
               LogPrintf("ConnectMiniBlock(): tried to overwrite block %s miniblock %s transaction %s \n", pindex->GetBlockHash().ToString(), pminiindex->GetBlockHash().ToString(), tx->GetHash().ToString());
-              // return state.DoS(100, error("ConnectMiniBlock(): tried to overwrite transaction"), REJECT_INVALID, "bad-txns-BIP30");
-              continue;
+              return state.DoS(100, error("ConnectMiniBlock(): tried to overwrite transaction"), REJECT_INVALID, "bad-txns-BIP30");
             }
         }
     }
