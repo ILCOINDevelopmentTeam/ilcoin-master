@@ -239,15 +239,20 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
        {
          uint256 hash_mb(uint256S(mb1));
          CMiniBlockIndex* pblockindex_mb = mapMiniBlockIndex[hash_mb];
-         CBlock3 block_mb;
-         if(!ReadBlockFromDisk(block_mb, pblockindex_mb, Params().GetConsensus())) continue;
+         if(!pblockindex_mb){
+           mblks.push_back(mb1);
+         }
+         else {
+           CBlock3 block_mb;
+           if(!ReadBlockFromDisk(block_mb, pblockindex_mb, Params().GetConsensus())) continue;
 
-         strippedsize += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
-         size += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION);
-         weight += (uint64_t)::GetBlockWeight(block_mb);
-         txsize += block_mb.vtx.size();
+           strippedsize += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
+           size += (uint64_t)::GetSerializeSize(block_mb, SER_NETWORK, PROTOCOL_VERSION);
+           weight += (uint64_t)::GetBlockWeight(block_mb);
+           txsize += block_mb.vtx.size();
 
-         mblks.push_back(mb1);
+           mblks.push_back(mb1);
+         }
        }
     }
 
