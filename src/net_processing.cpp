@@ -461,7 +461,9 @@ struct CNodeState {
     std::list<QueuedBlock> vBlocksInFlight;
     //! When the first entry in vBlocksInFlight started downloading. Don't care when vBlocksInFlight is empty.
     int64_t nDownloadingSince;
+    //! Number of blocks in flight.
     int nBlocksInFlight;
+    //! Number of blocks in flight validating headers.
     int nBlocksInFlightValidHeaders;
     //! Whether we consider this a preferred download peer.
     bool fPreferredDownload;
@@ -493,6 +495,9 @@ struct CNodeState {
     std::map<std::string, CQueuedMiniBlock> mapQueuedMiniBlock;
     std::map<int, CQueuedMiniBlock> mapOrderedMiniBlock;
 
+    //! Sync miniblocks should wait until new blocks arrives.
+    bool fSyncMiniblocksWait;
+
     CNodeState(CAddress addrIn, std::string addrNameIn) : address(addrIn), name(addrNameIn) {
         fCurrentlyConnected = false;
         nMisbehavior = 0;
@@ -518,6 +523,7 @@ struct CNodeState {
         nMiniTip = -1;
         nMiniBlocksInFlight = 0;
         nSendMBAttempts = 0;
+        fSyncMiniblocksWait = false;
     }
 };
 
@@ -623,11 +629,12 @@ bool MarkBlockAsReceived(const uint256& hash) {
         state->nBlocksInFlight--;
         state->nStallingSince = 0;
         mapBlocksInFlight.erase(itInFlight);
+        state->fSyncMiniblocksWait = false;
         return true;
     }
     return false;
 }
-bool MarkMiniBlockAsReceived(const uint256& hash, NodeId nodeid, bool IsReceived, std::string from) {
+bool MarkMiniBlockAsReceived(const uint256& hash, NodeId nodeid, bool IsReceived, std::string from, bool fSyncMiniblocksWait = false) {
     bool clean = false;
     int nHeightIndex = -1;
     CNodeState *state = State(nodeid);
@@ -663,6 +670,9 @@ bool MarkMiniBlockAsReceived(const uint256& hash, NodeId nodeid, bool IsReceived
         state->nMiniBlocksInFlight = state->nMiniBlocksInFlight - 1 < 0 ? 0 : state->nMiniBlocksInFlight -1;
         state->nStallingSince = 0;
     }
+
+    state->fSyncMiniblocksWait = fSyncMiniblocksWait;
+
     return clean;
 }
 
@@ -2065,6 +2075,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               // Also always process if we requested the block explicitly, as we may
               // need it even though it is not a candidate for a new best tip.
               forceProcessing |= MarkBlockAsReceived(hash);
+              nodestate->fSyncMiniblocksWait = false;
               // mapBlockSource is only used for sending reject messages and DoS scores,
               // so the race between here and cs_main in Process New Block is fine.
               mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
@@ -4259,7 +4270,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             CBlockIndex* pindexCurrent = miBlk->second;
             CBlock3 blockCurrent;
             if(!ReadBlockFromDiskCheck(blockCurrent, pindexCurrent, Params().GetConsensus())){
-              MarkMiniBlockAsReceived(pblock->GetHash(), pfrom->GetId(), false, "MINIBLOCK ReadBlockFromDiskCheck could not read."); // Ask for it again.
+              MarkMiniBlockAsReceived(pblock->GetHash(), pfrom->GetId(), false, "MINIBLOCK ReadBlockFromDiskCheck could not read.", true); // Ask for it again.
             }
             else{
               int _nHeight = cMiniblock.nHeight;
@@ -5453,7 +5464,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
 
 
         // LogPrintf("N Blocks In Flight (%d)\n", state.nBlocksInFlight);
-        if(state.nBlocksInFlight > 0) return true;
+        if(state.nBlocksInFlight > 0 || state.fSyncMiniblocksWait) return true;
 
         //
         // Message: getminidata (miniblocks)
