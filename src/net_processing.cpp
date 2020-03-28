@@ -65,7 +65,7 @@ static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SH
 static const float MINIMUM_PERCENT_VALID = 0.25;
 
 /** No Answer time for certificate in seconds */
-static const int64_t CERTIFICATE_NO_ANSWER_TIME = 1 * 10;
+static const int64_t CERTIFICATE_NO_ANSWER_TIME = 1 * 60;
 
 // Internal stuff
 namespace {
@@ -901,6 +901,13 @@ void FindNextBlocksToDownload(NodeId nodeid, unsigned int count, std::vector<con
     }
 }
 
+uint64_t generateId( uint16_t v1, uint16_t v2, uint16_t v3, uint16_t v4)
+{
+   uint64_t id;
+   id = v1 | (((uint64_t)v2) << 16) | (((uint64_t)v3) << 32) | (((uint64_t)v4) << 48);
+   return id;
+}
+
 void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock, CConnman& connman, const CNetMsgMaker msgMaker, const CChainParams& chainparams){
   // Read the message certificate.
 
@@ -921,9 +928,10 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
 
   // Do not forget mapValidateList.emplace(_hash.ToString() + pfrom->GetId(), CValidate ...
   // For Bridge Nodes, because the unique map key has to be by over each node request.
-
+  if(!pfrom) return;
   const uint256 _hash(pblock->GetHash());
-  std::string id_valid = _hash.ToString() + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime()) + "_sync" + std::to_string(rand() % 100000 + 1);
+  std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+  // LogPrintf("RequestCertificateValidation id_valid(%s)\n", id_valid);
   // LogPrintf("RequestCertificateValidation %s\n", _hash.ToString());
   // LogPrintf("RequestCertificateValidation C2P %s\n", pblock->message);
   int64_t nNow = GetTime();
@@ -941,7 +949,7 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
             std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
             std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
 
-            // LogPrintf("Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
+            // LogPrintf("RequestCertificateValidation block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
             CRequestValidate cRequestvalidate(id_valid, _hash.ToString(), _key_cert, _time_cert, _certificate);
             connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
           }
@@ -949,6 +957,7 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
     }
   }
 }
+
 void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock, CConnman& connman, const CNetMsgMaker msgMaker, const CChainParams& chainparams, bool isMini, int nHeight){
   // Read the message certificate.
   std::stringstream certificatestream(pblock->message);
@@ -968,9 +977,10 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock,
 
   // Do not forget mapValidateList2.emplace(_hash.ToString() + pfrom->GetId(), CValidate2 ...
   // For Bridge Nodes, because the unique map key has to be by over each node request.
+  if(!pfrom) return;
   const uint256 _hash(pblock->GetHash());
-  std::string id_valid = _hash.ToString() + "_"+ std::to_string(pfrom->GetId()) + "_"+ std::to_string(GetTime()) + "_sync" + std::to_string(rand() % 100000 + 1);
-
+  std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+  // LogPrintf("RequestCertificateValidation2 id_valid(%s)\n", id_valid);
   int64_t nNow = GetTime();
   if(CheckIndexAgainstCheckpoint(chainparams, _hash))
   {
@@ -986,7 +996,7 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock,
             std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
             std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
 
-            // LogPrintf("Validate2 nodeId(%d) certsize(%d) block(%s) key_cert(%s) time_cert(%s) certificate(%s) ismini(%s)\n", vnode->GetId(), certificate_data.size(), _hash.ToString(), _key_cert, _time_cert, _certificate, (isMini ? "True" : "False"));
+            // LogPrintf("RequestCertificateValidation2 nodeId(%d) certsize(%d) block(%s) key_cert(%s) time_cert(%s) certificate(%s) ismini(%s)\n", vnode->GetId(), certificate_data.size(), _hash.ToString(), _key_cert, _time_cert, _certificate, (isMini ? "True" : "False"));
             CRequestValidate cRequestvalidate(id_valid, _hash.ToString(), _key_cert, _time_cert, _certificate);
             connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
           }
@@ -997,10 +1007,11 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock,
 
 void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
 {
-  for (std::map<std::string, CValidate>::iterator it = mapValidateList.begin(); it != mapValidateList.end(); it++ )
+  for (std::map<std::string, CValidate2>::iterator it = mapValidateList2.begin(); it != mapValidateList2.end(); it++ )
   {
     int64_t nNow = GetTime();
-    if((it->second.cAnswer == 0 && nNow > it->second.nMinExpTime) || fForce)
+    // LogPrintf("ResendCertificateNoAnswer nNow(%s) nMinExpTime(%s)\n", std::to_string(nNow), std::to_string(it->second.nMinExpTime));
+    if(nNow > it->second.nMinExpTime || fForce)
     {
       // LogPrintf("ResendCertificateNoAnswer Validate Init\n");
       const CNetMsgMaker msgMaker(it->second.pfrom->GetSendVersion());
@@ -1016,10 +1027,8 @@ void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
 
       std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
       const uint256 _hash(it->second.pblock->GetHash());
-      std::string id_valid = _hash.ToString() + "_"+ std::to_string(it->second.pfrom->GetId()) + "_"+ std::to_string(GetTime()) + "_sync" + std::to_string(rand() % 100000 + 1);
-
-      // LogPrintf("ResendCertificateNoAnswer Validate Message(%s) vNodesFiltered.size(%d)\n", it->second.message, vNodesFiltered.size());
-
+      std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+      // LogPrintf("ResendCertificateNoAnswer id_valid(%s)\n", id_valid);
       for (CNode* vnode : vNodesFiltered) {
           if (connman.NodeFullyConnected(vnode)){
             for(uint i = 0 ; i < certificate_data.size() ; i+=3){
@@ -4301,6 +4310,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         //
         CNodeState &nodestate = *State(pfrom->GetId());
         nodestate.nMiniTip = cInvMini.nMiniTip;
+
+        int nHeightCurrent = miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0;
+        if(nodestate.nMiniTip == nHeightCurrent) nodestate.fSyncMiniblocksWait = true;
+
         for(std::map<std::string, CQueuedMiniBlock>::iterator it = cInvMini.mapQueuedMiniBlock.begin(); it != cInvMini.mapQueuedMiniBlock.end(); it++) {
           // LogPrintf("RECMINIBLOCKS hash(%s) index(%d) mbhash(%s)\n", it->second.hash, it->second.nHeight, it->second.mbhash);
           std::map<std::string, CQueuedMiniBlock>::iterator itState = nodestate.mapQueuedMiniBlock.find(it->second.mbhash);
@@ -4319,7 +4332,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       CTip ctip;
       vRecv >> ctip;
       int nHeightPeer = ctip.nMiniTip;
-      // LogPrintf("ASKMINIBLOCKS - miniChainActive.Height(%d) - nHeightPeer(%d)\n", miniChainActive.Height(), nHeightPeer);
 
       int nHeightCurrent = miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0;
       std::map<std::string, CQueuedMiniBlock> mapQueuedMiniBlock;
@@ -4329,7 +4341,6 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         for(int nHeightIndex = nHeightPeer ; nHeightIndex < miniChainActive.Height() && nCount < MAX_MINI_BLOCKS_INV_PER_PEER; nHeightIndex++){
           CMiniBlockIndex* pindex = miniChainActive[nHeightIndex + 1];
           if(pindex){
-            // LogPrintf("ASKMINIBLOCKS hash(%s) index(%d) mbhash(%s)\n", (pindex->pprev ? pindex->pprev->GetBlockHash().ToString() : ""), pindex->nHeight, pindex->GetBlockHash().ToString());
             nCount++;
             mapQueuedMiniBlock.emplace(pindex->GetBlockHash().ToString(), CQueuedMiniBlock{false, false, (pindex->pprev ? pindex->pprev->GetBlockHash().ToString() : ""), pindex->GetBlockHash().ToString(), pindex->nHeight, 0});
           }
@@ -5348,8 +5359,10 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             // Ask Inv Mini Blocks, with peer last MiniBlockIndex we can contruct all the chain back until the miniblock we missing.
             if(fSendTrickle && state.nMiniBlocksInFlight==0) {
               fSendTrickle = false;
-              CTip ctip((miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0));
-              connman.PushMessage(pto, msgMaker.Make(NetMsgType::ASKMINIBLOCKS, ctip));
+              if(!state.fSyncMiniblocksWait) {
+                CTip ctip((miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0));
+                connman.PushMessage(pto, msgMaker.Make(NetMsgType::ASKMINIBLOCKS, ctip));
+              }
             }
         }
         if (!vInv.empty())
