@@ -930,7 +930,7 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock2> pblock,
   // For Bridge Nodes, because the unique map key has to be by over each node request.
   if(!pfrom) return;
   const uint256 _hash(pblock->GetHash());
-  std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+  std::string id_valid = "_sync_" + std::to_string(pfrom->GetId()) + "_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
   // LogPrintf("RequestCertificateValidation id_valid(%s)\n", id_valid);
   // LogPrintf("RequestCertificateValidation %s\n", _hash.ToString());
   // LogPrintf("RequestCertificateValidation C2P %s\n", pblock->message);
@@ -979,7 +979,7 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock,
   // For Bridge Nodes, because the unique map key has to be by over each node request.
   if(!pfrom) return;
   const uint256 _hash(pblock->GetHash());
-  std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+  std::string id_valid = "_sync_" + std::to_string(pfrom->GetId()) + "_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
   // LogPrintf("RequestCertificateValidation2 id_valid(%s)\n", id_valid);
   int64_t nNow = GetTime();
   if(CheckIndexAgainstCheckpoint(chainparams, _hash))
@@ -1027,7 +1027,7 @@ void ResendCertificateNoAnswer(CNode* pfrom, CConnman& connman, bool fForce = fa
 
       std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
       const uint256 _hash(it->second.pblock->GetHash());
-      std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
+      std::string id_valid = it->first;
       // LogPrintf("_ResendCertificateNoAnswer_ id_valid(%s)\n", id_valid);
       for (CNode* vnode : vNodesFiltered) {
           if (connman.NodeFullyConnected(vnode)){
