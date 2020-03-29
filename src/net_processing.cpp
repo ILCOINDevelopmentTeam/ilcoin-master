@@ -1005,16 +1005,16 @@ void RequestCertificateValidation(CNode* pfrom, std::shared_ptr<CBlock3> pblock,
   }
 }
 
-void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
+void ResendCertificateNoAnswer(CNode* pfrom, CConnman& connman, bool fForce = false)
 {
   for (std::map<std::string, CValidate2>::iterator it = mapValidateList2.begin(); it != mapValidateList2.end(); it++ )
   {
     int64_t nNow = GetTime();
-    // LogPrintf("ResendCertificateNoAnswer nNow(%s) nMinExpTime(%s)\n", std::to_string(nNow), std::to_string(it->second.nMinExpTime));
+    // LogPrintf("_ResendCertificateNoAnswer_ nNow(%s) nMinExpTime(%s)\n", std::to_string(nNow), std::to_string(it->second.nMinExpTime));
     if(nNow > it->second.nMinExpTime || fForce)
     {
-      // LogPrintf("ResendCertificateNoAnswer Validate Init\n");
-      const CNetMsgMaker msgMaker(it->second.pfrom->GetSendVersion());
+      // LogPrintf("_ResendCertificateNoAnswer Validate Init\n");
+      const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
 
       // Read the message certificate.
       std::stringstream certificatestream(it->second.message);
@@ -1028,7 +1028,7 @@ void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
       std::vector<CNode*> vNodesFiltered = connman.GetValidatorNodeList();
       const uint256 _hash(it->second.pblock->GetHash());
       std::string id_valid = "_sync_" + std::to_string(generateId((rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1),(rand() % 100000 + 1)));
-      // LogPrintf("ResendCertificateNoAnswer id_valid(%s)\n", id_valid);
+      // LogPrintf("_ResendCertificateNoAnswer_ id_valid(%s)\n", id_valid);
       for (CNode* vnode : vNodesFiltered) {
           if (connman.NodeFullyConnected(vnode)){
             for(uint i = 0 ; i < certificate_data.size() ; i+=3){
@@ -1036,7 +1036,7 @@ void ResendCertificateNoAnswer(CConnman& connman, bool fForce = false)
               std::string _time_cert = certificate_data.size() > i+1 ? certificate_data[i+1] : "";
               std::string _certificate = certificate_data.size() > i+2 ? certificate_data[i+2] : "";
 
-              // LogPrintf("ResendCertificateNoAnswer Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
+              // LogPrintf("_ResendCertificateNoAnswer_ Validate block(%s) key_cert(%s) time_cert(%s) certificate(%s)\n", _hash.ToString(), _key_cert, _time_cert, _certificate);
               CRequestValidate cRequestvalidate(id_valid, _hash.ToString(), _key_cert, _time_cert, _certificate);
               connman.PushMessage(vnode, msgMaker.Make(NetMsgType::VALIDATE_REQUEST, cRequestvalidate));
             }
@@ -2127,6 +2127,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               // Also always process if we requested the block explicitly, as we may
               // need it even though it is not a candidate for a new best tip.
               forceProcessing |= MarkBlockAsReceived(hash);
+              nodestate->fSyncMiniblocksWait = false;
               // mapBlockSource is only used for sending reject messages and DoS scores,
               // so the race between here and cs_main in Process New Block is fine.
               mapBlockSource.emplace(hash, std::make_pair(_pfrom->GetId(), true));
@@ -2312,7 +2313,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, strCommand, REJECT_NONSTANDARD,
                                strprintf("Expected to offer services %08x", pfrom->nServicesExpected)));
             pfrom->fDisconnect = true;
-            ResendCertificateNoAnswer(connman, true);
+            ResendCertificateNoAnswer(pfrom, connman, true);
             return false;
         }
 
@@ -2323,7 +2324,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
             connman.PushMessage(pfrom, CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, strCommand, REJECT_OBSOLETE,
                                strprintf("Version must be %d or greater", MIN_PEER_PROTO_VERSION)));
             pfrom->fDisconnect = true;
-            ResendCertificateNoAnswer(connman, true);
+            ResendCertificateNoAnswer(pfrom, connman, true);
             return false;
         }
 
@@ -2345,7 +2346,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         {
             LogPrintf("connected to self at %s, disconnecting\n", pfrom->addr.ToString());
             pfrom->fDisconnect = true;
-            ResendCertificateNoAnswer(connman, true);
+            ResendCertificateNoAnswer(pfrom, connman, true);
             return true;
         }
 
@@ -4542,7 +4543,7 @@ bool ProcessMessages(CNode* pfrom, CConnman& connman, const std::atomic<bool>& i
     //
     bool fMoreWork = false;
 
-    ResendCertificateNoAnswer(connman);
+    ResendCertificateNoAnswer(pfrom, connman);
 
     if (!pfrom->vRecvGetData.empty())
         ProcessGetData(pfrom, chainparams.GetConsensus(), connman, interruptMsgProc);
@@ -5376,7 +5377,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             // should only happen during initial block download.
             LogPrintf("Peer=%d is stalling block download, disconnecting\n", pto->id);
             pto->fDisconnect = true;
-            ResendCertificateNoAnswer(connman, true);
+            ResendCertificateNoAnswer(pto, connman, true);
             return true;
         }
         // In case there is a block that has been in flight from this peer for 2 + 0.5 * N times the block interval
@@ -5390,7 +5391,7 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
             if (nNow > state.nDownloadingSince + consensusParams.nPowTargetSpacing * (BLOCK_DOWNLOAD_TIMEOUT_BASE + BLOCK_DOWNLOAD_TIMEOUT_PER_PEER * nOtherPeersWithValidatedDownloads)) {
                 LogPrintf("Timeout downloading block %s from peer=%d, disconnecting\n", queuedBlock.hash.ToString(), pto->id);
                 pto->fDisconnect = true;
-                ResendCertificateNoAnswer(connman, true);
+                ResendCertificateNoAnswer(pto, connman, true);
                 return true;
             }
         }
