@@ -16,7 +16,7 @@
 #define CLIENT_VERSION_MAJOR 0
 #define CLIENT_VERSION_MINOR 16
 #define CLIENT_VERSION_REVISION 03
-#define CLIENT_VERSION_BUILD 0
+#define CLIENT_VERSION_BUILD 1
 
 //! Set to true for release, false for prerelease or test build
 #define CLIENT_VERSION_IS_RELEASE true
@@ -25,7 +25,7 @@
  * Copyright year (2009-this)
  * Todo: update this when changing our copyright comments in the source
  */
-#define COPYRIGHT_YEAR 2019
+#define COPYRIGHT_YEAR 2020
 
 #endif //HAVE_CONFIG_H
 
