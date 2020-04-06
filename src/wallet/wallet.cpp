@@ -1514,6 +1514,28 @@ CBlockIndex* CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool f
               } else {
                   ret = nullptr;
               }
+
+              // Support miniblock rescan.
+              if(block.tracking != "none"){
+                std::stringstream miniblks(block.tracking);
+                std::string mb;
+                while(std::getline(miniblks, mb, '|'))
+                {
+                  uint256 hashMiniBlock = uint256S(mb);
+                  MiniBlockMap::iterator it = mapMiniBlockIndex.find(hashMiniBlock);
+                  if (it != mapMiniBlockIndex.end()){
+                    CMiniBlockIndex *pminiindex = it->second;
+
+                    CBlock3 miniblock;
+                    if(ReadBlockFromDisk(miniblock, pminiindex, Params().GetConsensus())) {
+                      for (size_t posInMiniBlock = 0; posInMiniBlock < miniblock.vtx.size(); ++posInMiniBlock) {
+                          AddToWalletIfInvolvingMe(*miniblock.vtx[posInMiniBlock], pindex, posInMiniBlock, fUpdate);
+                      }
+                    }
+                  }
+                }
+              }
+
               pindex = chainActive.Next(pindex);
               if (GetTime() >= nNow + 60) {
                   nNow = GetTime();
