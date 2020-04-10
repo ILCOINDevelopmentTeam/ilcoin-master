@@ -6342,6 +6342,11 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         CValidationState state; // Only used to report errors, not invalidity - ignore it
         if (!ActivateBestChain(state, chainparams, pblock3))
             return error("%s: ActivateBestChain failed", __func__);
+
+        // Write changes to disk, after new miniblock.
+        if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
+            return false;
+        }
     }
 
     return true;
