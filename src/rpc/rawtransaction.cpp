@@ -120,6 +120,17 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             else
                 entry.push_back(Pair("confirmations", 0));
         }
+        MiniBlockMap::iterator mmi = mapMiniBlockIndex.find(hashBlock);
+        if (mmi != mapMiniBlockIndex.end() && (*mmi).second) {
+            CMiniBlockIndex* pminiindex = (*mmi).second;
+            if (chainActive.Contains(pminiindex->pprev)) {
+                entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pminiindex->pprev->nHeight));
+                entry.push_back(Pair("time", pminiindex->pprev->GetBlockTime()));
+                entry.push_back(Pair("blocktime", pminiindex->pprev->GetBlockTime()));
+            }
+            else
+                entry.push_back(Pair("confirmations", 0));
+        }
     }
 }
 
