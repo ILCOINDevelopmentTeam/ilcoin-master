@@ -14,7 +14,7 @@ With long-time programming knowledge for each of our representatives, we are int
 
 ILCoin Dev Team create a new protocol called C2P, this protocol allows to prevent one of the biggest concerns of the cryptocurrency world, which is the 51% attack.
 Our protocol has 3 new levels of security to prevent attacks or corruption
-in the blockchain, and in this way avoid every malicious activities. Also, we increment our max block size up to 25 MB according to the necessities and demand of all the crypto community therefore prevent the bottleneck issue.
+in the blockchain, and in this way avoid every malicious activities. Also, we increment our max block size up to 5 GB with RIFT according to the necessities and demand of all the crypto community therefore prevent the bottleneck issue.
 
 
 [Original Whitepaper](https://ilcoincrypto.com/img/docs/white-paper.pdf).
