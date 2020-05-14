@@ -6319,7 +6319,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         }
 
         // Write changes to disk, after new miniblock.
-        if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC)) {
+        if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
             return false;
         }
         // LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
@@ -6327,25 +6327,25 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
         uiInterface.NotifyBlockTip(fInitialDownload, chainActive.Tip());
-    }
 
-    if(pprevindex != NULL)
-    {
-        CBlock3 block3;
-        bool ret = ReadBlockFromDisk(block3, pprevindex, chainparams.GetConsensus());
+        if(pprevindex != NULL)
+        {
+            CBlock3 block3;
+            bool ret = ReadBlockFromDisk(block3, pprevindex, chainparams.GetConsensus());
 
-        std::shared_ptr<CBlock3> pblock3 = std::make_shared<CBlock3>();
-        *pblock3 = block3;
+            std::shared_ptr<CBlock3> pblock3 = std::make_shared<CBlock3>();
+            *pblock3 = block3;
 
-        NotifyHeaderTip();
+            NotifyHeaderTip();
 
-        CValidationState state; // Only used to report errors, not invalidity - ignore it
-        if (!ActivateBestChain(state, chainparams, pblock3))
-            return error("%s: ActivateBestChain failed", __func__);
+            CValidationState state; // Only used to report errors, not invalidity - ignore it
+            if (!ActivateBestChain(state, chainparams, pblock3))
+                return error("%s: ActivateBestChain failed", __func__);
 
-        // Write changes to disk, after new miniblock.
-        if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
-            return false;
+            // Write changes to disk, after new miniblock.
+            if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
+                return false;
+            }
         }
     }
 

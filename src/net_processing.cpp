@@ -638,29 +638,23 @@ bool MarkMiniBlockAsReceived(const uint256& hash, NodeId nodeid, bool IsReceived
     bool clean = false;
     int nHeightIndex = -1;
     CNodeState *state = State(nodeid);
-    LogPrintf("MarkMiniBlockAsReceived hash(%s) nodeid(%d) from(%s)\n", hash.ToString(), nodeid, from);
+    LogPrintf("MarkMiniBlockAsReceived hash(%s) nodeid(%d) from(%s) Init\n", hash.ToString(), nodeid, from);
     // return false;
     std::map<std::string, CQueuedMiniBlock>::iterator itQueueMB = state->mapQueuedMiniBlock.find(hash.ToString());
     if (itQueueMB != state->mapQueuedMiniBlock.end()) {
         nHeightIndex = itQueueMB->second.nHeight;
-        itQueueMB->second.IsFlight = IsReceived;
-        itQueueMB->second.IsReceived = IsReceived;
         state->mapQueuedMiniBlock.erase(itQueueMB);
         clean = true;
     }
 
     std::map<int, CQueuedMiniBlock>::iterator itOrderedMB = state->mapOrderedMiniBlock.find(nHeightIndex);
     if (itOrderedMB != state->mapOrderedMiniBlock.end()) {
-        itOrderedMB->second.IsFlight = IsReceived;
-        itOrderedMB->second.IsReceived = IsReceived;
         state->mapOrderedMiniBlock.erase(itOrderedMB);
         clean = true;
     }
 
     std::map<std::string, CQueuedMiniBlock>::iterator itInFlight = mapMiniBlocksInFlight.find(hash.ToString());
     if (itInFlight != mapMiniBlocksInFlight.end()) {
-        itInFlight->second.IsReceived = IsReceived;
-        itInFlight->second.IsReceived = IsReceived;
         mapMiniBlocksInFlight.erase(itInFlight);
         clean = true;
     }
@@ -672,7 +666,7 @@ bool MarkMiniBlockAsReceived(const uint256& hash, NodeId nodeid, bool IsReceived
     }
 
     state->fSyncMiniblocksWait = fSyncMiniblocksWait;
-
+    LogPrintf("MarkMiniBlockAsReceived hash(%s) nodeid(%d) from(%s) End\n", hash.ToString(), nodeid, from);
     return clean;
 }
 
@@ -2184,7 +2178,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       {
         if(it->second.nHeight <= nHeightIndex){
           MarkMiniBlockAsReceived(uint256S(it->second.mbhash), pfrom->GetId(), true, "cleanup nodestate->mapOrderedMiniBlock."); // Just delete from list.
-          it = nodestate->mapOrderedMiniBlock.begin();
+          break;
         }
         else it++;
       }
@@ -2193,8 +2187,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       while(it4 != mapMiniBlocksInFlight.end())
       {
         if(it4->second.nHeight <= nHeightIndex){
-          MarkMiniBlockAsReceived(uint256S(it4->second.mbhash), pfrom->GetId(), false, "cleanup mapMiniBlocksInFlight."); // Ask for it3 again.
-          it4 = mapMiniBlocksInFlight.begin();
+          MarkMiniBlockAsReceived(uint256S(it4->second.mbhash), pfrom->GetId(), false, "cleanup mapMiniBlocksInFlight."); // Ask for it4 again.
+          break;
         }
         else it4++;
       }
@@ -2202,15 +2196,13 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       //
       // Message: timeout
       //
-
       int64_t nNow = GetTime();
-
       std::map<int, CQueuedMiniBlock>::iterator it2 = nodestate->mapOrderedMiniBlock.begin();
       while(it2 != nodestate->mapOrderedMiniBlock.end())
       {
         if(it2->second.nMinExpTime > 0 && nNow > it2->second.nMinExpTime){
           MarkMiniBlockAsReceived(uint256S(it2->second.mbhash), pfrom->GetId(), false, "timeout nodestate->mapOrderedMiniBlock."); // Ask for it2 again.
-          it2 = nodestate->mapOrderedMiniBlock.begin();
+          break;
         }
         else it2++;
       }
@@ -2220,7 +2212,7 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       {
         if(it3->second.nMinExpTime > 0 && nNow > it3->second.nMinExpTime){
           MarkMiniBlockAsReceived(uint256S(it3->second.mbhash), pfrom->GetId(), false, "timeout mapMiniBlocksInFlight."); // Ask for it3 again.
-          it3 = mapMiniBlocksInFlight.begin();
+          break;
         }
         else it3++;
       }

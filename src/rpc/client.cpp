@@ -53,6 +53,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getbalance", 1, "minconf" },
     { "getbalance", 2, "include_watchonly" },
     { "getblockhash", 0, "height" },
+    { "getminiblockhash", 0, "height" },
     { "waitforblockheight", 0, "height" },
     { "waitforblockheight", 1, "timeout" },
     { "waitforblock", 1, "timeout" },

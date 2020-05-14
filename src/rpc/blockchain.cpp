@@ -364,6 +364,23 @@ UniValue getblockcount(const JSONRPCRequest& request)
     return chainActive.Height();
 }
 
+UniValue getminiblockcount(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 0)
+        throw runtime_error(
+            "getminiblockcount\n"
+            "\nReturns the number of miniblocks in the longest blockchain.\n"
+            "\nResult:\n"
+            "n    (numeric) The current miniblock count\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getminiblockcount", "")
+            + HelpExampleRpc("getminiblockcount", "")
+        );
+
+    LOCK(cs_main);
+    return miniChainActive.Height();
+}
+
 UniValue getbestblockhash(const JSONRPCRequest& request)
 {
     if (request.fHelp || request.params.size() != 0)
@@ -839,6 +856,31 @@ UniValue getblockhash(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");
 
     CBlockIndex* pblockindex = chainActive[nHeight];
+    return pblockindex->GetBlockHash().GetHex();
+}
+
+UniValue getminiblockhash(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() != 1)
+        throw runtime_error(
+            "getminiblockhash height\n"
+            "\nReturns hash of miniblock in best-block-chain at height provided.\n"
+            "\nArguments:\n"
+            "1. height         (numeric, required) The height index\n"
+            "\nResult:\n"
+            "\"hash\"         (string) The miniblock hash\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getminiblockhash", "1000")
+            + HelpExampleRpc("getminiblockhash", "1000")
+        );
+
+    LOCK(cs_main);
+
+    int nHeight = request.params[0].get_int();
+    if (nHeight < 0 || nHeight > miniChainActive.Height())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "MiniBlock height out of range");
+
+    CMiniBlockIndex* pblockindex = miniChainActive[nHeight];
     return pblockindex->GetBlockHash().GetHex();
 }
 
@@ -1796,9 +1838,11 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getbestblockhash",       &getbestblockhash,       true,  {} },
     { "blockchain",         "getbestminiblockhash",   &getbestminiblockhash,   true,  {} },
     { "blockchain",         "getblockcount",          &getblockcount,          true,  {} },
+    { "blockchain",         "getminiblockcount",      &getminiblockcount,      true,  {} },
     { "blockchain",         "getblock",               &getblock,               true,  {"blockhash","verbose"} },
     { "blockchain",         "getminiblock",           &getminiblock,           true,  {"blockhash","verbose"} },
     { "blockchain",         "getblockhash",           &getblockhash,           true,  {"height"} },
+    { "blockchain",         "getminiblockhash",       &getminiblockhash,       true,  {"height"} },
     { "blockchain",         "getblockheader",         &getblockheader,         true,  {"blockhash","verbose"} },
     { "blockchain",         "getchaintips",           &getchaintips,           true,  {} },
     { "blockchain",         "getdifficulty",          &getdifficulty,          true,  {} },
