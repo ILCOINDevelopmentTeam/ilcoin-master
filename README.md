@@ -17,9 +17,9 @@ Our protocol has 3 new levels of security to prevent attacks or corruption
 in the blockchain, and in this way avoid every malicious activities. Also, we increment our max block size up to 5 GB with RIFT according to the necessities and demand of all the crypto community therefore prevent the bottleneck issue.
 
 
-[Original Whitepaper](https://ilcoincrypto.com/img/docs/white-paper.pdf).
+[Original Whitepaper](https://ilcoincrypto.com/assets/img/docs/white-paper.pdf).
 
-[Build ILCOIN Source Code - Linux](https://ilcoincrypto.com/img/docs/BuildILCoinSourceCode-Linux.pdf).
+[Build ILCOIN Source Code - Linux](https://ilcoincrypto.com/assets/img/docs/BuildILCoinSourceCode-Linux.pdf).
 
 License
 -------
