@@ -3113,7 +3113,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
                 prevheights[j] = view.AccessCoins(tx.vin[j].prevout.hash)->nHeight;
             }
 
-            if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex)) {
+            if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pminiindex)) {
                 return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
                                  REJECT_INVALID, "bad-txns-nonfinal");
             }
@@ -3158,7 +3158,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
     if (!control.Wait())
         return state.DoS(100, false);
-    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
+    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime3;
     LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
     LogPrintf("%s - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", __func__, nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
 
@@ -6319,34 +6319,26 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         }
 
         // Write changes to disk, after new miniblock.
-        if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
-            return false;
-        }
         // LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
 
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
         uiInterface.NotifyBlockTip(fInitialDownload, chainActive.Tip());
+    }
 
-        if(pprevindex != NULL)
-        {
-            CBlock3 block3;
-            bool ret = ReadBlockFromDisk(block3, pprevindex, chainparams.GetConsensus());
+    if(pprevindex != NULL)
+    {
+        CBlock3 block3;
+        bool ret = ReadBlockFromDisk(block3, pprevindex, chainparams.GetConsensus());
 
-            std::shared_ptr<CBlock3> pblock3 = std::make_shared<CBlock3>();
-            *pblock3 = block3;
+        std::shared_ptr<CBlock3> pblock3 = std::make_shared<CBlock3>();
+        *pblock3 = block3;
 
-            NotifyHeaderTip();
+        NotifyHeaderTip();
 
-            CValidationState state; // Only used to report errors, not invalidity - ignore it
-            if (!ActivateBestChain(state, chainparams, pblock3))
-                return error("%s: ActivateBestChain failed", __func__);
-
-            // Write changes to disk, after new miniblock.
-            if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS)) {
-                return false;
-            }
-        }
+        CValidationState state; // Only used to report errors, not invalidity - ignore it
+        if (!ActivateBestChain(state, chainparams, pblock3))
+            return error("%s: ActivateBestChain failed", __func__);
     }
 
     return true;
