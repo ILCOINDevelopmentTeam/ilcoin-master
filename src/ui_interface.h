@@ -103,7 +103,9 @@ public:
 
     /** Best header has changed */
     boost::signals2::signal<void (bool, const CBlockIndex *)> NotifyHeaderTip;
+    boost::signals2::signal<void (bool, const CBlockIndex *, int nHeight)> NotifyMiniBlockTip;
     boost::signals2::signal<void (bool, const CBlockIndex *, int nHeight)> NotifyHeaderMiniTip;
+    boost::signals2::signal<void (bool, const CBlockIndex *, int nHeight)> NotifyHeaderMiniBlockSyncing;
 
     /** Banlist did change. */
     boost::signals2::signal<void (void)> BannedListChanged;

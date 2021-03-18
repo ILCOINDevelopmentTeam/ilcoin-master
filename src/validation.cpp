@@ -6324,6 +6324,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
         uiInterface.NotifyBlockTip(fInitialDownload, chainActive.Tip());
+        uiInterface.NotifyMiniBlockTip(fInitialDownload, chainActive.Tip(), miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0);
 
         if(pprevindex != NULL)
         {

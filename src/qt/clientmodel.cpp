@@ -293,6 +293,28 @@ static void BlockTipChanged(ClientModel *clientmodel, bool initialSync, const CB
         nLastUpdateNotification = now;
     }
 }
+static void MiniBlockTipChanged(ClientModel *clientmodel, bool initialSync, const CBlockIndex *pIndex, int nHeight, bool fHeader, bool recMiniblock)
+{
+    // lock free async UI updates in case we have a new block tip
+    // during initial sync, only update the UI if the last update
+    // was > 250ms (MODEL_UPDATE_DELAY) ago
+    int64_t now = 0;
+    if (initialSync)
+        now = GetTimeMillis();
+
+    int64_t& nLastUpdateNotification = fHeader ? nLastHeaderTipUpdateNotification : nLastBlockTipUpdateNotification;
+
+    // if we are in-sync, update the UI regardless of last update time
+    if (!initialSync || now - nLastUpdateNotification > MODEL_UPDATE_DELAY) {
+        //pass a async signal to the UI thread
+        QMetaObject::invokeMethod(clientmodel, "numBlocksChanged", Qt::QueuedConnection,
+                                  Q_ARG(int, pIndex->nHeight),
+                                  Q_ARG(QDateTime, QDateTime::fromTime_t(pIndex->GetBlockTime())),
+                                  Q_ARG(double, clientmodel->getVerificationProgress(pIndex)),
+                                  Q_ARG(bool, fHeader));
+        nLastUpdateNotification = now;
+    }
+}
 
 void ClientModel::subscribeToCoreSignals()
 {
@@ -304,6 +326,9 @@ void ClientModel::subscribeToCoreSignals()
     uiInterface.BannedListChanged.connect(boost::bind(BannedListChanged, this));
     uiInterface.NotifyBlockTip.connect(boost::bind(BlockTipChanged, this, _1, _2, false));
     uiInterface.NotifyHeaderTip.connect(boost::bind(BlockTipChanged, this, _1, _2, true));
+    uiInterface.NotifyMiniBlockTip.connect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, false, false));
+    uiInterface.NotifyHeaderMiniTip.connect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, true, false));
+    uiInterface.NotifyHeaderMiniBlockSyncing.connect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, true, true));
 }
 
 void ClientModel::unsubscribeFromCoreSignals()
@@ -316,4 +341,7 @@ void ClientModel::unsubscribeFromCoreSignals()
     uiInterface.BannedListChanged.disconnect(boost::bind(BannedListChanged, this));
     uiInterface.NotifyBlockTip.disconnect(boost::bind(BlockTipChanged, this, _1, _2, false));
     uiInterface.NotifyHeaderTip.disconnect(boost::bind(BlockTipChanged, this, _1, _2, true));
+    uiInterface.NotifyMiniBlockTip.disconnect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, false, false));
+    uiInterface.NotifyHeaderMiniTip.disconnect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, true, false));
+    uiInterface.NotifyHeaderMiniBlockSyncing.disconnect(boost::bind(MiniBlockTipChanged, this, _1, _2, _3, true, true));
 }
