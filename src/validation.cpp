@@ -3113,7 +3113,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
                 prevheights[j] = view.AccessCoins(tx.vin[j].prevout.hash)->nHeight;
             }
 
-            if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pminiindex)) {
+            if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex)) {
                 return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
                                  REJECT_INVALID, "bad-txns-nonfinal");
             }
@@ -3158,7 +3158,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
     if (!control.Wait())
         return state.DoS(100, false);
-    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime3;
+    int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
     LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
     LogPrintf("%s - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", __func__, nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
 
@@ -6289,7 +6289,9 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
 
         CCoinsViewCache view(pcoinsTip);
         rv = ConnectMiniBlock(miniblock, state, chainActive.Tip(), pminiindex, view, chainparams, false, fNewBlock);
-
+        if (!rv) {
+            return error("ConnectTip(): ConnectMiniBlock %s failed", pminiindex->GetBlockHash().ToString());
+        }
         bool flushed = view.Flush();
         assert(flushed);
         // LogPrintf("ProcessNewBlock ConnectBlock() %s OK!\n", (rv?"true":"false"));
@@ -6324,7 +6326,6 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
         uiInterface.NotifyBlockTip(fInitialDownload, chainActive.Tip());
-        uiInterface.NotifyMiniBlockTip(fInitialDownload, chainActive.Tip(), miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0);
 
         if(pprevindex != NULL)
         {
@@ -6339,6 +6340,8 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
             CValidationState state; // Only used to report errors, not invalidity - ignore it
             if (!ActivateBestChain(state, chainparams, pblock3))
                 return error("%s: ActivateBestChain failed", __func__);
+
+            // Write changes to disk, after new miniblock.
         }
     }
 
