@@ -1193,7 +1193,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
               while(std::getline(miniblks, mb, '|'))
               {
                  uint256 hashMiniBlock(uint256S(mb));
-                 if (mapMiniBlockIndex.count(hashMiniBlock) == 0) continue;
+                 if (mapMiniBlockIndex.count(hashMiniBlock) == 0 || !mapMiniBlockIndex[hashMiniBlock]) continue;
                  CMiniBlockIndex* pminiblockindex = mapMiniBlockIndex[hashMiniBlock];
 
                  CBlock3 miniblock;
@@ -6257,13 +6257,11 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 
     NotifyHeaderTip();
 
-    if(pblock->tracking == "none" || IsInitialBlockDownload() || fForceTip){
-      CValidationState state; // Only used to report errors, not invalidity - ignore it
-      // LogPrintf("%s - pblock->message: %s\n", __func__, pblock->message);
-      if (!ActivateBestChain(state, chainparams, pblock))
-          return error("%s: ActivateBestChain failed", __func__);
-      // LogPrintf("ProcessNewBlock() OK!\n");
-    }
+    CValidationState state; // Only used to report errors, not invalidity - ignore it
+    // LogPrintf("%s - pblock->message: %s\n", __func__, pblock->message);
+    if (!ActivateBestChain(state, chainparams, pblock))
+        return error("%s: ActivateBestChain failed", __func__);
+    // LogPrintf("ProcessNewBlock() OK!\n");
 
     return true;
 }
@@ -7202,7 +7200,7 @@ int LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskBl
                 }
 
                 // process in case the block isn't known yet
-                if ((mapMiniBlockIndex.count(hash) == 0 || (mapMiniBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) &&
+                if ((mapMiniBlockIndex.count(hash) == 0 || !mapMiniBlockIndex[hash] || (mapMiniBlockIndex[hash]->nStatus & BLOCK_HAVE_DATA) == 0) &&
                     (hash == hashGenesisMiniBlock || block.tracking == "Empty")) {
                     LOCK(cs_main);
                     CValidationState state;

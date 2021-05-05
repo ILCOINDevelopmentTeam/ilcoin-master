@@ -240,7 +240,7 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
          uint256 hash_mb(uint256S(mb1));
          CMiniBlockIndex* pblockindex_mb = mapMiniBlockIndex[hash_mb];
          if(!pblockindex_mb){
-           mblks.push_back(mb1);
+           ;
          }
          else {
            CBlock3 block_mb;
@@ -254,6 +254,10 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
            mblks.push_back(mb1);
          }
        }
+    }
+    if(mblks.size() == 0)
+    {
+      mblks.push_back("none");
     }
 
     result.push_back(Pair("strippedsize", strippedsize));
@@ -1106,7 +1110,7 @@ UniValue getminiblock(const JSONRPCRequest& request)
     if (request.params.size() > 1)
         fVerbose = request.params[1].get_bool();
 
-    if (mapMiniBlockIndex.count(hash) == 0)
+    if (mapMiniBlockIndex.count(hash) == 0 || !mapMiniBlockIndex[hash])
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
     CMiniBlockIndex* pblockindex = mapMiniBlockIndex[hash];
