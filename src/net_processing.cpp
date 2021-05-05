@@ -4458,9 +4458,14 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
           it->second.cAnswer++;
           bool fDelete = false;
           if(cResponseValidate_res.valid == "True"){
-            it->second.cValid++;
-            CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
-            connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+            try {
+              it->second.cValid++;
+              CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
+              connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+            }
+            catch (const std::exception&) {
+                // The peer where we want to push the message is disconnected already.
+            }
 
             mapValidateBridgeList.erase(it);
             fDelete = true;
