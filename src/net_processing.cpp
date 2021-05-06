@@ -5479,7 +5479,6 @@ bool SendMessages(CNode* pto, CConnman& connman, const std::atomic<bool>& interr
 
         // LogPrintf("N Blocks In Flight (%d)\n", state.nBlocksInFlight);
         if(state.nBlocksInFlight > 0 || state.fSyncMiniblocksWait) return true;
-        if(chainActive.Height() == 0) return true;
 
         //
         // Message: getminidata (miniblocks)
