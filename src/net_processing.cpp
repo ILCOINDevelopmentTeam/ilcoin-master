@@ -4459,9 +4459,12 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
           bool fDelete = false;
           if(cResponseValidate_res.valid == "True"){
             try {
-              it->second.cValid++;
-              CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
-              connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+              if (it->second.pfrom && connman.NodeFullyConnected(it->second.pfrom))
+              {
+                it->second.cValid++;
+                CResponseValidate cResponseValidate_bridge(cResponseValidate_res.id_valid, cResponseValidate_res.hash, it->second.pfrom->GetId(), "True");
+                connman.PushMessage(it->second.pfrom, msgMaker.Make(NetMsgType::VALIDATE_RESPONSE, cResponseValidate_bridge));
+              }
             }
             catch (const std::exception&) {
                 // The peer where we want to push the message is disconnected already.
