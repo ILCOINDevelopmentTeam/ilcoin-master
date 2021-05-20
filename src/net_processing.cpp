@@ -4259,8 +4259,10 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       CNodeState *nodestate = State(pfrom->GetId());
       {
         LOCK(cs_main);
-        MiniBlockMap::iterator miMB = mapMiniBlockIndex.find(pblock->GetHash());
-        if (miMB != mapMiniBlockIndex.end()){
+        uint256 hash = pblock->GetHash();
+        MiniBlockMap::iterator miMB = mapMiniBlockIndex.find(hash);
+        LogPrintf("Received MINIBLOCK %s\n", hash.ToString());
+        if (miMB != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash]){
           // if already have it then take out of the list from the sending peer.
           MarkMiniBlockAsReceived(pblock->GetHash(), pfrom->GetId(), true, "MINIBLOCK Already on the blockchain."); // Just delete from list.
         }

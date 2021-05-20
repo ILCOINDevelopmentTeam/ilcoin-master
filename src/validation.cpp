@@ -6265,6 +6265,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 }
 bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock)
 {
+    LogPrintf("ProcessNewMiniBlock");
     CBlockIndex *pprevindex = NULL;
     {
         CMiniBlockIndex *pminiindex = NULL;
@@ -6275,6 +6276,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         // Store to disk
         const CBlock3& miniblock = *pblock;
         miniblock.fChecked = true;
+        LogPrintf("AcceptMiniBlock(%s)\n", pblock->GetHash().ToString());
         ret = AcceptMiniBlock(pblock, state, chainparams, &pminiindex, fForceProcessing, NULL, true);
         miniChainActive.SetTip(pminiindex);
         // LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
