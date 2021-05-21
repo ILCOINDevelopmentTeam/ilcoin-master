@@ -2149,17 +2149,27 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         {
           CNode* _pfrom = it->second.pfrom;
           std::shared_ptr<CBlock3> _pblock = it->second.pblock;
-          LogPrint("net", "received miniblock %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
-          LogPrintf("Received miniblock %s peer=%d\n", _pblock->GetHash().ToString(), _pfrom->id);
+
+          uint256 hash = _pblock->GetHash();
+          LogPrint("net", "received miniblock %s peer=%d\n", hash.ToString(), _pfrom->id);
+          LogPrintf("Received miniblock %s peer=%d\n", hash.ToString(), _pfrom->id);
           {
             LOCK(cs_main);
 
-            bool fNewBlock = false;
-            _pblock->message = it->second.message;
-            _pblock->tracking = it->second.tracking;
-            ProcessNewMiniBlock(chainparams, _pblock, true, fNewBlock);
-            MarkMiniBlockAsReceived(_pblock->GetHash(), pfrom->GetId(), true, "ProcessNewMiniBlock."); // Just delete from list.
-            LogPrintf("ProcessNewMiniBlock %s peer=%d fNewBlock=%s tx=%lu\n", _pblock->GetHash().ToString(), _pfrom->id, (fNewBlock ? "True" : "False"), (unsigned long)miniChainActive.Tip()->nChainTx);
+            MiniBlockMap::iterator miMB = mapMiniBlockIndex.find(hash);
+            if (miMB != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash]){
+              // if already have it then take out of the list from the sending peer.
+              MarkMiniBlockAsReceived(hash, pfrom->GetId(), true, "MINIBLOCK Already on the blockchain validated."); // Just delete from list.
+            }
+            else {
+              bool fNewBlock = false;
+              _pblock->message = it->second.message;
+              _pblock->tracking = it->second.tracking;
+
+              ProcessNewMiniBlock(chainparams, _pblock, true, fNewBlock);
+              MarkMiniBlockAsReceived(hash, pfrom->GetId(), true, "ProcessNewMiniBlock."); // Just delete from list.
+              LogPrintf("ProcessNewMiniBlock %s peer=%d fNewBlock=%s tx=%lu\n", hash.ToString(), _pfrom->id, (fNewBlock ? "True" : "False"), (unsigned long)miniChainActive.Tip()->nChainTx);
+            }
 
             mapValidateListValid2.erase(it);
             fDeleteValid = true;

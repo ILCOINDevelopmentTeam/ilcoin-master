@@ -6265,7 +6265,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 }
 bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock)
 {
-    LogPrintf("ProcessNewMiniBlock");
+    LogPrintf("ProcessNewMiniBlock\n");
     CBlockIndex *pprevindex = NULL;
     {
         CMiniBlockIndex *pminiindex = NULL;
@@ -6279,7 +6279,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         LogPrintf("AcceptMiniBlock(%s)\n", pblock->GetHash().ToString());
         ret = AcceptMiniBlock(pblock, state, chainparams, &pminiindex, fForceProcessing, NULL, true);
         miniChainActive.SetTip(pminiindex);
-        // LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
+        LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
 
         bool rv = true;
         pprevindex = pminiindex->pprev;
@@ -6292,17 +6292,17 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         }
         bool flushed = view.Flush();
         assert(flushed);
-        // LogPrintf("ProcessNewBlock ConnectBlock() %s OK!\n", (rv?"true":"false"));
+        LogPrintf("ProcessNewBlock ConnectBlock() %s OK!\n", (rv?"true":"false"));
 
         // Write changes to disk, after new miniblock.
         if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC)) {
             return false;
         }
-        // LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
+        LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
 
         if(rv){
           mempool.removeForBlock(miniblock.vtx, chainActive.Tip()->nHeight);
-          // LogPrintf("ProcessNewBlock removeForBlock() %d OK!\n", miniblock.vtx.size());
+          LogPrintf("ProcessNewBlock removeForBlock() %d OK!\n", miniblock.vtx.size());
 
           bool fBlocksDisconnected = true;
           if (fBlocksDisconnected) {
@@ -6315,11 +6315,11 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
 
           for (unsigned int i = 0; i < miniblock.vtx.size(); i++)
               GetMainSignals().SyncTransaction(*miniblock.vtx[i], pprevindex, i);
-          // LogPrintf("ProcessNewBlock SyncTransaction() %d OK!\n", miniblock.vtx.size());
+          LogPrintf("ProcessNewBlock SyncTransaction() %d OK!\n", miniblock.vtx.size());
         }
 
         // Write changes to disk, after new miniblock.
-        // LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
+        LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
 
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
