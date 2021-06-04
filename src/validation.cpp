@@ -4748,8 +4748,10 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
 {
     // Check for duplicate
     uint256 hash = block.GetHash();
+    LogPrintf("AddToMiniBlockIndex (hash 1): %s\n", hash.ToString());
+
     MiniBlockMap::iterator it = mapMiniBlockIndex.find(hash);
-    if (it != mapMiniBlockIndex.end())
+    if (it != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash])
         return it->second;
 
     // Construct new block index object
@@ -4759,6 +4761,7 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
     // to avoid miners withholding blocks but broadcasting headers, to get a
     // competitive advantage.
     pindexNew->nSequenceId = 0;
+    LogPrintf("AddToMiniBlockIndex (nVersion): %d\n", pindexNew->nVersion);
 
     BlockMap::iterator miPrev = mapBlockIndex.find(block.hashPrevBlock);
     if (miPrev != mapBlockIndex.end())
@@ -4767,32 +4770,47 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
         // pindexNew->nHeight = pindexNew->pprev->nHeight + 1;
         // pindexNew->BuildSkip();
     }
+    LogPrintf("AddToMiniBlockIndex (hashPrevBlock): %s\n", pindexNew->pprev->GetBlockHash().ToString());
 
     pindexNew->pminiprev = NULL;
-    std::vector<std::pair<int, CMiniBlockIndex*> > vSortedByHeight;
-    vSortedByHeight.reserve(mapMiniBlockIndex.size());
-    BOOST_FOREACH(const PAIRTYPE(uint256, CMiniBlockIndex*)& item, mapMiniBlockIndex)
+    CMiniBlockIndex *pindexMiniNew = miniChainActive.Tip();
+    LogPrintf("%s miniChainActive.Tip(%s)(%d)\n", __func__, (miniChainActive.Tip() ? miniChainActive.Tip()->GetBlockHash().ToString() : "EMPTY"), (miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0));
+    if (pindexMiniNew != NULL)
     {
-        CMiniBlockIndex* pindex = item.second;
-        vSortedByHeight.push_back(std::make_pair(pindex->nHeight, pindex));
+        pindexNew->pminiprev = pindexMiniNew;
+        pindexNew->nHeight = pindexMiniNew->nHeight + 1;
+        // pindexNew->BuildSkip();
     }
-    if (!vSortedByHeight.empty()){
-      sort(vSortedByHeight.begin(), vSortedByHeight.end());
-      const PAIRTYPE(int, CMiniBlockIndex*)& item = vSortedByHeight.back();
-      MiniBlockMap::iterator miMiniPrev = mapMiniBlockIndex.find(item.second->GetBlockHash());
-      if (miMiniPrev != mapMiniBlockIndex.end())
+    else
+    {
+      std::vector<std::pair<int, CMiniBlockIndex*> > vSortedByHeight;
+      vSortedByHeight.reserve(mapMiniBlockIndex.size());
+      BOOST_FOREACH(const PAIRTYPE(uint256, CMiniBlockIndex*)& item, mapMiniBlockIndex)
       {
-          pindexNew->pminiprev = (*miMiniPrev).second;
-          pindexNew->nHeight = pindexNew->pminiprev->nHeight + 1;
-          // pindexNew->BuildSkip();
+          CMiniBlockIndex* pindex = item.second;
+          vSortedByHeight.push_back(std::make_pair(pindex->nHeight, pindex));
+      }
+      if (!vSortedByHeight.empty()){
+        sort(vSortedByHeight.begin(), vSortedByHeight.end());
+        const PAIRTYPE(int, CMiniBlockIndex*)& item = vSortedByHeight.back();
+        MiniBlockMap::iterator miMiniPrev = mapMiniBlockIndex.find(item.second->GetBlockHash());
+        if (miMiniPrev != mapMiniBlockIndex.end())
+        {
+            pindexNew->pminiprev = (*miMiniPrev).second;
+            pindexNew->nHeight = pindexNew->pminiprev->nHeight + 1;
+            // pindexNew->BuildSkip();
+        }
+        else {
+          pindexNew->nHeight = 1;
+        }
       }
       else {
         pindexNew->nHeight = 1;
       }
     }
-    else {
-      pindexNew->nHeight = 1;
-    }
+    LogPrintf("AddToMiniBlockIndex (nHeight): %d\n", pindexNew->nHeight);
+    LogPrintf("AddToMiniBlockIndex (hashPrevMiniBlock): %s\n", (pindexNew->nHeight == 1 ? "NULL" : pindexNew->pminiprev->GetBlockHash().ToString()));
+    LogPrintf("AddToMiniBlockIndex (hashMerkleRoot): %s\n", pindexNew->hashMerkleRoot.ToString());
 
 
     MiniBlockMap::iterator mi = mapMiniBlockIndex.insert(std::make_pair(hash, pindexNew)).first;
@@ -4806,18 +4824,11 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
 
     setDirtyMiniBlockIndex.insert(pindexNew);
 
-    // LogPrintf("AddToMiniBlockIndex (hash 1): %s\n", hash.ToString());
-    // LogPrintf("AddToMiniBlockIndex (hash 2): %s\n", pindexNew->GetBlockHash().ToString());
-    // LogPrintf("AddToMiniBlockIndex (nVersion): %d\n", pindexNew->nVersion);
-    // LogPrintf("AddToMiniBlockIndex (hashPrevBlock): %s\n", pindexNew->pprev->GetBlockHash().ToString());
-    // LogPrintf("AddToMiniBlockIndex (nHeight): %d\n", pindexNew->nHeight);
-    // LogPrintf("AddToMiniBlockIndex (hashPrevMiniBlock): %s\n", (pindexNew->nHeight == 1 ? "NULL" : pindexNew->pminiprev->GetBlockHash().ToString()));
-    // LogPrintf("AddToMiniBlockIndex (hashMerkleRoot): %s\n", pindexNew->hashMerkleRoot.ToString());
-    // LogPrintf("AddToMiniBlockIndex (nTime): %d\n", pindexNew->nTime);
-    // LogPrintf("AddToMiniBlockIndex (nBits): %d\n", pindexNew->nBits);
-    // LogPrintf("AddToMiniBlockIndex (nNonce): %d\n", pindexNew->nNonce);
-    // LogPrintf("AddToMiniBlockIndex (nTx): %d\n", pindexNew->nTx);
-    // LogPrintf("AddToMiniBlockIndex (nChainTx): %d\n", pindexNew->nChainTx);
+    LogPrintf("AddToMiniBlockIndex (nTime): %d\n", pindexNew->nTime);
+    LogPrintf("AddToMiniBlockIndex (nBits): %d\n", pindexNew->nBits);
+    LogPrintf("AddToMiniBlockIndex (nNonce): %d\n", pindexNew->nNonce);
+    LogPrintf("AddToMiniBlockIndex (nTx): %d\n", pindexNew->nTx);
+    LogPrintf("AddToMiniBlockIndex (nChainTx): %d\n", pindexNew->nChainTx);
 
     return pindexNew;
 }
@@ -5785,10 +5796,10 @@ static bool AcceptMiniBlockHeader(const CBlockHeader& block, CValidationState& s
     uint256 hash = block.GetHash();
     MiniBlockMap::iterator miSelf = mapMiniBlockIndex.find(hash);
     CMiniBlockIndex *pindex = NULL;
-    // LogPrintf("AcceptBlockHeader() hashGenesisBlock Before OK!\n");
+    LogPrintf("AcceptBlockHeader() hashGenesisBlock Before OK!\n");
     if (hash != chainparams.GetConsensus().hashGenesisBlock) {
 
-        if (miSelf != mapMiniBlockIndex.end()) {
+        if (miSelf != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash]) {
             // Block header is already known.
             pindex = miSelf->second;
             if (ppindex)
@@ -5814,8 +5825,8 @@ static bool AcceptMiniBlockHeader(const CBlockHeader& block, CValidationState& s
             return state.Invalid(error("%s: previous block %s is marked invalid", __func__, block.hashPrevBlock.ToString()), 0, "not-found");
 
 
-        // LogPrintf("AcceptBlockHeader(block.hashPrevBlock)=%s OK!\n", block.hashPrevBlock.ToString());
-        // LogPrintf("AcceptBlockHeader(blockprev.hash)=%s OK!\n", blockprev.GetHash().ToString());
+        LogPrintf("AcceptBlockHeader(block.hashPrevBlock)=%s OK!\n", block.hashPrevBlock.ToString());
+        LogPrintf("AcceptBlockHeader(blockprev.hash)=%s OK!\n", blockprev.GetHash().ToString());
 
         std::stringstream miniblks(blockprev.tracking);
         std::string mb;
@@ -5823,20 +5834,25 @@ static bool AcceptMiniBlockHeader(const CBlockHeader& block, CValidationState& s
         while(std::getline(miniblks, mb, '|'))
         {
            if(mb == hash.ToString()) fCheckPOW = false;
-           // LogPrintf("AcceptBlockHeader(mb)=%s OK!\n", mb);
-           // LogPrintf("AcceptBlockHeader(hash)=%s OK!\n", hash.ToString());
+           LogPrintf("AcceptBlockHeader(mb)=%s OK!\n", mb);
+           LogPrintf("AcceptBlockHeader(hash)=%s OK!\n", hash.ToString());
         }
 
-        // LogPrintf("AcceptBlockHeader(fCheckPOW)=%s OK!\n", (fCheckPOW?"true":"false"));
+        LogPrintf("AcceptBlockHeader(fCheckPOW)=%s OK!\n", (fCheckPOW?"true":"false"));
         if (!CheckBlockHeader(block, state, chainparams.GetConsensus(), fCheckPOW))
             return error("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
 
+        LogPrintf("%s: Consensus::CheckBlockHeader: %s, %s\n", __func__, hash.ToString(), FormatStateMessage(state));
     }
     if (pindex == NULL)
         pindex = AddToMiniBlockIndex(block);
 
+    LogPrintf("%s: AddToMiniBlockIndex: %d\n", __func__, pindex->nHeight);
+
     if (ppindex)
         *ppindex = pindex;
+
+    LogPrintf("%s: AddToMiniBlockIndex 2: %d\n", __func__, pindex->nHeight);
 
     return true;
 }
@@ -6128,31 +6144,44 @@ static bool AcceptMiniBlock(const std::shared_ptr<const CBlock3>& pblock, CValid
     const CBlock3& block = *pblock;
     AssertLockHeld(cs_main);
 
+    LogPrintf("AcceptMiniBlock() AssertLockHeld\n");
     CMiniBlockIndex *pindexDummy = NULL;
     CMiniBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
 
-    if (!AcceptMiniBlockHeader(block, state, chainparams, &pindex))
-        return false;
-    int nHeight = pindex->nHeight;
-
+    int nHeight = miniChainActive.Height();
+    try {
+      if (!AcceptMiniBlockHeader(block, state, chainparams, &pindex))
+          return false;
+      nHeight = pindex->nHeight;
+      LogPrintf("AcceptMiniBlockHeader() nHeight (%d)\n", nHeight);
+    } catch (const std::exception& e) {
+      LogPrintf("AcceptMiniBlockHeader() error\n");
+      return false;
+    }
     // Write block to history file
     try {
         unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
         CDiskBlockPos blockPos;
         if (dbp != NULL)
             blockPos = *dbp;
-        if (!FindBlockPos(state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL))
-            return error("AcceptBlock(): FindBlockPos failed");
+        if (!FindBlockPos(state, blockPos, nBlockSize+8, nHeight, block.GetBlockTime(), dbp != NULL)){
+          LogPrintf("AcceptMiniBlock(): FindBlockPos failed\n");
+          return error("AcceptMiniBlock(): FindBlockPos failed");
+        }
         if (dbp == NULL) {
           if (block.message == "" || block.tracking == "" ){
             LogPrintf("AcceptBlock(): Certificate EMPTY\n");
             return error("AcceptBlock(): Certificate EMPTY");
           }
-          if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
-              AbortNode(state, "Failed to write block");
+          if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart())){
+            LogPrintf("Failed to write block\n");
+            AbortNode(state, "Failed to write block");
+          }
         }
-        if (!ReceivedBlockTransactions(block, state, pindex, blockPos))
-            return error("AcceptBlock(): ReceivedBlockTransactions failed");
+        if (!ReceivedBlockTransactions(block, state, pindex, blockPos)){
+          LogPrintf("AcceptMiniBlock(): ReceivedBlockTransactions failed\n");
+          return error("AcceptMiniBlock(): ReceivedBlockTransactions failed");
+        }
     } catch (const std::runtime_error& e) {
         return AbortNode(state, std::string("System error: ") + e.what());
     }
