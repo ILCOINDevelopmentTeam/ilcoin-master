@@ -4773,12 +4773,15 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
     LogPrintf("AddToMiniBlockIndex (hashPrevBlock): %s\n", pindexNew->pprev->GetBlockHash().ToString());
 
     pindexNew->pminiprev = NULL;
-    CMiniBlockIndex *pindexMiniNew = miniChainActive.Tip();
+    CMiniBlockIndex *pindexMiniNew = NULL;
+    pindexMiniNew = miniChainActive.Tip();
     LogPrintf("%s miniChainActive.Tip(%s)(%d)\n", __func__, (miniChainActive.Tip() ? miniChainActive.Tip()->GetBlockHash().ToString() : "EMPTY"), (miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0));
     if (pindexMiniNew != NULL)
     {
         pindexNew->pminiprev = pindexMiniNew;
-        pindexNew->nHeight = pindexMiniNew->nHeight + 1;
+        if(pindexNew->pminiprev != NULL && pindexNew->pminiprev->nHeight > 0)
+          pindexNew->nHeight = pindexNew->pminiprev->nHeight + 1;
+        else return NULL;
         // pindexNew->BuildSkip();
     }
     else
@@ -5847,6 +5850,8 @@ static bool AcceptMiniBlockHeader(const CBlockHeader& block, CValidationState& s
     if (pindex == NULL)
         pindex = AddToMiniBlockIndex(block);
 
+    if (pindex == NULL) return false;
+
     LogPrintf("%s: AddToMiniBlockIndex: %d\n", __func__, pindex->nHeight);
 
     if (ppindex)
@@ -6307,6 +6312,8 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         miniblock.fChecked = true;
         LogPrintf("AcceptMiniBlock(%s)\n", pblock->GetHash().ToString());
         ret = AcceptMiniBlock(pblock, state, chainparams, &pminiindex, fForceProcessing, NULL, true);
+        if(!ret) return false;
+
         miniChainActive.SetTip(pminiindex);
         LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
 

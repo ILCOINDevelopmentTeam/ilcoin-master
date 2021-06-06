@@ -2166,9 +2166,14 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
               _pblock->message = it->second.message;
               _pblock->tracking = it->second.tracking;
 
-              ProcessNewMiniBlock(chainparams, _pblock, true, fNewBlock);
-              MarkMiniBlockAsReceived(hash, pfrom->GetId(), true, "ProcessNewMiniBlock."); // Just delete from list.
-              LogPrintf("ProcessNewMiniBlock %s peer=%d fNewBlock=%s tx=%lu\n", hash.ToString(), _pfrom->id, (fNewBlock ? "True" : "False"), (unsigned long)miniChainActive.Tip()->nChainTx);
+              bool ret = ProcessNewMiniBlock(chainparams, _pblock, true, fNewBlock);
+              if(ret){
+                MarkMiniBlockAsReceived(hash, pfrom->GetId(), true, "ProcessNewMiniBlock."); // Just delete from list.
+                LogPrintf("ProcessNewMiniBlock %s peer=%d fNewBlock=%s tx=%lu\n", hash.ToString(), _pfrom->id, (fNewBlock ? "True" : "False"), (unsigned long)miniChainActive.Tip()->nChainTx);
+              }
+              else {
+                MarkMiniBlockAsReceived(hash, pfrom->GetId(), false, "MINIBLOCK Index error.", true); // Ask for it again.
+              }
             }
 
             mapValidateListValid2.erase(it);
