@@ -4,6 +4,8 @@
 
 #include "chain.h"
 
+#include <util.h>
+
 /**
  * CChain implementation
  */
@@ -162,6 +164,17 @@ CMiniBlockIndex* CMiniBlockIndex::GetAncestor(int height)
 const CMiniBlockIndex* CMiniBlockIndex::GetAncestor(int height) const
 {
     return const_cast<CMiniBlockIndex*>(this)->GetAncestor(height);
+}
+
+CMiniBlockIndex* CMiniChain::FindHash(uint256 hash) const {
+    LogPrintf("FindHash (hash): %s\n", (vChain.size() - 1));
+    for(int i = 1; i < vChain.size(); i++) {
+        CMiniBlockIndex *item = vChain[i];
+        if(item->GetBlockHash() == hash){
+          return item;
+        }
+    }
+    return NULL;
 }
 
 void CBlockIndex::BuildSkip()

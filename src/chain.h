@@ -805,6 +805,9 @@ public:
 
     /** Return a CBlockLocator that refers to a block in this chain (by default the tip). */
     CBlockLocator GetLocator(const CMiniBlockIndex *pindex = NULL) const;
+
+    /** Returns the vector. */
+    CMiniBlockIndex* FindHash(uint256 hash) const;
 };
 
 #endif // ILCOIN_CHAIN_H

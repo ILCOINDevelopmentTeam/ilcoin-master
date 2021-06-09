@@ -1110,13 +1110,106 @@ UniValue getminiblock(const JSONRPCRequest& request)
     if (request.params.size() > 1)
         fVerbose = request.params[1].get_bool();
 
-    if (mapMiniBlockIndex.count(hash) == 0 || !mapMiniBlockIndex[hash])
-        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
-
-    CMiniBlockIndex* pblockindex = mapMiniBlockIndex[hash];
+    CMiniBlockIndex* pblockindex = NULL;
+    if (mapMiniBlockIndex.count(hash) == 0 || !mapMiniBlockIndex[hash]){
+      pblockindex = miniChainActive.FindHash(hash);
+      if(pblockindex == NULL) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
+      mapMiniBlockIndex.insert(std::make_pair(hash, pblockindex));
+    }
+    else {
+      pblockindex = mapMiniBlockIndex[hash];
+      if(pblockindex == NULL) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
+    }
 
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
-        throw JSONRPCError(RPC_INTERNAL_ERROR, "Block not available (pruned data)");
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Mini block not available (pruned data)");
+
+    CBlock3 block;
+    if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Can't read block from disk");
+
+    LogPrintf("getminiblock (hash): %s\n", hash.ToString());
+    LogPrintf("getminiblock (tracking): %s\n", block.tracking);
+    LogPrintf("getminiblock (nVersion): %d\n", block.nVersion);
+    LogPrintf("getminiblock (hashPrevBlock): %s\n", block.hashPrevBlock.ToString());
+    LogPrintf("getminiblock (hashMerkleRoot): %s\n", block.hashMerkleRoot.ToString());
+    LogPrintf("getminiblock (nTime): %d\n", block.nTime);
+    LogPrintf("getminiblock (nBits): %d\n", block.nBits);
+    LogPrintf("getminiblock (nNonce): %d\n", block.nNonce);
+
+    if (!fVerbose)
+    {
+        CBlock block_clean = block;
+        block_clean.vtx.reserve(block.vtx.size());
+        block_clean.vtx = block.vtx;
+
+        CDataStream ssBlock(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
+        ssBlock << block_clean;
+        std::string strHex = HexStr(ssBlock.begin(), ssBlock.end());
+        return strHex;
+    }
+    if(pblockindex) return blockToJSON(block, pblockindex);
+    return "NULL";
+}
+
+UniValue getminiblock2(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
+        throw runtime_error(
+            "getminiblock \"blockhash\" ( verbose )\n"
+            "\nIf verbose is false, returns a string that is serialized, hex-encoded data for block 'hash'.\n"
+            "If verbose is true, returns an Object with information about block <hash>.\n"
+            "\nArguments:\n"
+            "1. \"blockhash\"          (string, required) The block hash\n"
+            "2. verbose                (boolean, optional, default=true) true for a json object, false for the hex encoded data\n"
+            "\nResult (for verbose = true):\n"
+            "{\n"
+            "  \"hash\" : \"hash\",     (string) the block hash (same as provided)\n"
+            "  \"confirmations\" : n,   (numeric) The number of confirmations, or -1 if the block is not on the main chain\n"
+            "  \"size\" : n,            (numeric) The block size\n"
+            "  \"strippedsize\" : n,    (numeric) The block size excluding witness data\n"
+            "  \"weight\" : n           (numeric) The block weight as defined in BIP 141\n"
+            "  \"height\" : n,          (numeric) The block height or index\n"
+            "  \"version\" : n,         (numeric) The block version\n"
+            "  \"versionHex\" : \"00000000\", (string) The block version formatted in hexadecimal\n"
+            "  \"merkleroot\" : \"xxxx\", (string) The merkle root\n"
+            "  \"tx\" : [               (array of string) The transaction ids\n"
+            "     \"transactionid\"     (string) The transaction id\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"time\" : ttt,          (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"mediantime\" : ttt,    (numeric) The median block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"nonce\" : n,           (numeric) The nonce\n"
+            "  \"bits\" : \"1d00ffff\", (string) The bits\n"
+            "  \"difficulty\" : x.xxx,  (numeric) The difficulty\n"
+            "  \"chainwork\" : \"xxxx\",  (string) Expected number of hashes required to produce the chain up to this block (in hex)\n"
+            "  \"previousblockhash\" : \"hash\",  (string) The hash of the previous block\n"
+            "  \"nextblockhash\" : \"hash\"       (string) The hash of the next block\n"
+            "}\n"
+            "\nResult (for verbose=false):\n"
+            "\"data\"             (string) A string that is serialized, hex-encoded data for block 'hash'.\n"
+            "\nExamples:\n"
+            + HelpExampleCli("getminiblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
+            + HelpExampleRpc("getminiblock", "\"00000000c937983704a73af28acdec37b049d214adbda81d7e2a3dd146f6ed09\"")
+        );
+
+    LOCK(cs_main);
+
+    std::string strHash = request.params[0].get_str();
+    uint256 hash(uint256S(strHash));
+
+    bool fVerbose = true;
+    if (request.params.size() > 1)
+        fVerbose = request.params[1].get_bool();
+
+    LogPrintf("getminiblock2 (hash): %s\n", hash.ToString());
+    CMiniBlockIndex* pblockindex = miniChainActive.FindHash(hash);
+    if (pblockindex == NULL)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
+
+    LogPrintf("getminiblock2 (hash): %s\n", pblockindex->GetBlockHash().ToString());
+    if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Mini block not available (pruned data)");
 
     CBlock3 block;
     if(!ReadBlockFromDisk(block, pblockindex, Params().GetConsensus()))
@@ -1845,6 +1938,7 @@ static const CRPCCommand commands[] =
     { "blockchain",         "getminiblockcount",      &getminiblockcount,      true,  {} },
     { "blockchain",         "getblock",               &getblock,               true,  {"blockhash","verbose"} },
     { "blockchain",         "getminiblock",           &getminiblock,           true,  {"blockhash","verbose"} },
+    { "blockchain",         "getminiblock2",          &getminiblock2,          true,  {"blockhash","verbose"} },
     { "blockchain",         "getblockhash",           &getblockhash,           true,  {"height"} },
     { "blockchain",         "getminiblockhash",       &getminiblockhash,       true,  {"height"} },
     { "blockchain",         "getblockheader",         &getblockheader,         true,  {"blockhash","verbose"} },
