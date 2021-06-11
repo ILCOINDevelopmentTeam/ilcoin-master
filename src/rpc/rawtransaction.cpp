@@ -107,6 +107,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
     }
     entry.push_back(Pair("vout", vout));
 
+    LogPrintf("hashBlock (hash): %s\n", hashBlock.ToString());
     if (!hashBlock.IsNull()) {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
         BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
@@ -120,9 +121,8 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
             else
                 entry.push_back(Pair("confirmations", 0));
         }
-        MiniBlockMap::iterator mmi = mapMiniBlockIndex.find(hashBlock);
-        if (mmi != mapMiniBlockIndex.end() && (*mmi).second) {
-            CMiniBlockIndex* pminiindex = (*mmi).second;
+        CMiniBlockIndex* pminiindex = FindMiniBlockIndex(hashBlock);
+        if (pminiindex) {
             if (chainActive.Contains(pminiindex->pprev)) {
                 entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pminiindex->pprev->nHeight));
                 entry.push_back(Pair("time", pminiindex->pprev->GetBlockTime()));

@@ -1969,14 +1969,14 @@ void static ProcessGetMiniData(CNode* pfrom, const Consensus::Params& consensusP
 
             if (inv.type == MSG_MINIBLOCK)
             {
-                MiniBlockMap::iterator mi = mapMiniBlockIndex.find(inv.hash);
-                if (mi != mapMiniBlockIndex.end() && miniChainActive.Contains(mi->second))
+                CMiniBlockIndex* pblockindex = FindMiniBlockIndex(inv.hash);
+                if (pblockindex && miniChainActive.Contains(pblockindex))
                 {
                   CBlock3 miniblock;
-                  if (!ReadBlockFromDisk(miniblock, (*mi).second, consensusParams))
+                  if (!ReadBlockFromDisk(miniblock, pblockindex, consensusParams))
                       assert(!"cannot load block from disk");
 
-                  CMiniblock cMiniblock(mi->second->nHeight, miniblock);
+                  CMiniblock cMiniblock(pblockindex->nHeight, miniblock);
                   connman.PushMessage(pfrom, msgMaker.Make(SERIALIZE_TRANSACTION_NO_WITNESS, NetMsgType::MINIBLOCK, cMiniblock));
                 }
                 GetMainSignals().Inventory(inv.hash);
@@ -2156,8 +2156,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
           {
             LOCK(cs_main);
 
-            MiniBlockMap::iterator miMB = mapMiniBlockIndex.find(hash);
-            if (miMB != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash]){
+            CMiniBlockIndex* pblockindex = FindMiniBlockIndex(hash);
+            if (pblockindex){
               // if already have it then take out of the list from the sending peer.
               MarkMiniBlockAsReceived(hash, pfrom->GetId(), true, "MINIBLOCK Already on the blockchain validated."); // Just delete from list.
             }
@@ -4275,9 +4275,9 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
       {
         LOCK(cs_main);
         uint256 hash = pblock->GetHash();
-        MiniBlockMap::iterator miMB = mapMiniBlockIndex.find(hash);
+        CMiniBlockIndex* pblockindex = FindMiniBlockIndex(hash);
         LogPrintf("Received MINIBLOCK %s\n", hash.ToString());
-        if (miMB != mapMiniBlockIndex.end() && mapMiniBlockIndex.count(hash) > 0 && mapMiniBlockIndex[hash]){
+        if (pblockindex){
           // if already have it then take out of the list from the sending peer.
           MarkMiniBlockAsReceived(pblock->GetHash(), pfrom->GetId(), true, "MINIBLOCK Already on the blockchain."); // Just delete from list.
         }

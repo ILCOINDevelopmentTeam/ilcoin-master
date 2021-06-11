@@ -1522,9 +1522,8 @@ CBlockIndex* CWallet::ScanForWalletTransactions(CBlockIndex* pindexStart, bool f
                 while(std::getline(miniblks, mb, '|'))
                 {
                   uint256 hashMiniBlock = uint256S(mb);
-                  MiniBlockMap::iterator it = mapMiniBlockIndex.find(hashMiniBlock);
-                  if (it != mapMiniBlockIndex.end()){
-                    CMiniBlockIndex *pminiindex = it->second;
+                  CMiniBlockIndex* pminiindex = FindMiniBlockIndex(hashMiniBlock);
+                  if (pminiindex){
 
                     CBlock3 miniblock;
                     if(ReadBlockFromDisk(miniblock, pminiindex, Params().GetConsensus())) {

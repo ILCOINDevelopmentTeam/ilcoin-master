@@ -243,6 +243,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock);
 bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool* fNewBlock, bool fForceTip);
 
+CMiniBlockIndex* FindMiniBlockIndex(uint256 hash);
 /**
  * Process incoming block headers.
  *

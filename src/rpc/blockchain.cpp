@@ -238,7 +238,8 @@ UniValue blockToJSON(const CBlock3& block, const CBlockIndex* blockindex, bool t
        else
        {
          uint256 hash_mb(uint256S(mb1));
-         CMiniBlockIndex* pblockindex_mb = mapMiniBlockIndex[hash_mb];
+         CMiniBlockIndex* pblockindex_mb = FindMiniBlockIndex(hash_mb);
+
          if(!pblockindex_mb){
            ;
          }
@@ -1110,16 +1111,9 @@ UniValue getminiblock(const JSONRPCRequest& request)
     if (request.params.size() > 1)
         fVerbose = request.params[1].get_bool();
 
-    CMiniBlockIndex* pblockindex = NULL;
-    if (mapMiniBlockIndex.count(hash) == 0 || !mapMiniBlockIndex[hash]){
-      pblockindex = miniChainActive.FindHash(hash);
-      if(pblockindex == NULL) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
-      mapMiniBlockIndex.insert(std::make_pair(hash, pblockindex));
-    }
-    else {
-      pblockindex = mapMiniBlockIndex[hash];
-      if(pblockindex == NULL) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
-    }
+    CMiniBlockIndex* pblockindex = FindMiniBlockIndex(hash);
+    if (!pblockindex)
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
 
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Mini block not available (pruned data)");
@@ -1203,7 +1197,7 @@ UniValue getminiblock2(const JSONRPCRequest& request)
         fVerbose = request.params[1].get_bool();
 
     LogPrintf("getminiblock2 (hash): %s\n", hash.ToString());
-    CMiniBlockIndex* pblockindex = miniChainActive.FindHash(hash);
+    CMiniBlockIndex* pblockindex = FindMiniBlockIndex(hash);
     if (pblockindex == NULL)
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Mini block not found");
 

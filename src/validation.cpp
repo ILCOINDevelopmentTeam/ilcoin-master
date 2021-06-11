@@ -1193,8 +1193,8 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
               while(std::getline(miniblks, mb, '|'))
               {
                  uint256 hashMiniBlock(uint256S(mb));
-                 if (mapMiniBlockIndex.count(hashMiniBlock) == 0 || !mapMiniBlockIndex[hashMiniBlock]) continue;
-                 CMiniBlockIndex* pminiblockindex = mapMiniBlockIndex[hashMiniBlock];
+                 CMiniBlockIndex* pminiblockindex = FindMiniBlockIndex(hash);
+                 if (!pminiblockindex) continue;
 
                  CBlock3 miniblock;
                  if(!ReadBlockFromDisk(miniblock, pminiblockindex, Params().GetConsensus())) continue;
@@ -6380,6 +6380,17 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
     }
 
     return true;
+}
+
+CMiniBlockIndex* FindMiniBlockIndex(uint256 hash){
+  CMiniBlockIndex* pblockindex = mapMiniBlockIndex[hash];
+  if(pblockindex == NULL){
+    pblockindex = miniChainActive.FindHash(hash);
+    if(pblockindex == NULL) return NULL;
+
+    mapMiniBlockIndex.insert(std::make_pair(hash, pblockindex));
+  }
+  return pblockindex;
 }
 
 bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
