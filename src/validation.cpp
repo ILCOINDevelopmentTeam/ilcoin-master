@@ -4778,6 +4778,7 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
     LogPrintf("%s miniChainActive.Tip(%s)(%d)\n", __func__, (miniChainActive.Tip() ? miniChainActive.Tip()->GetBlockHash().ToString() : "EMPTY"), (miniChainActive.Tip() ? miniChainActive.Tip()->nHeight : 0));
     if (pindexMiniNew != NULL)
     {
+        LogPrintf("AddToMiniBlockIndex pindexMiniNew NOT NULL \n");
         pindexNew->pminiprev = pindexMiniNew;
         if(pindexNew->pminiprev != NULL && pindexNew->pminiprev->nHeight > 0)
           pindexNew->nHeight = pindexNew->pminiprev->nHeight + 1;
@@ -4786,12 +4787,13 @@ CMiniBlockIndex* AddToMiniBlockIndex(const CBlockHeader& block)
     }
     else
     {
+      LogPrintf("AddToMiniBlockIndex pindexMiniNew NULL (mapMiniBlockIndex.size): %d\n", mapMiniBlockIndex.size());
       std::vector<std::pair<int, CMiniBlockIndex*> > vSortedByHeight;
       vSortedByHeight.reserve(mapMiniBlockIndex.size());
       BOOST_FOREACH(const PAIRTYPE(uint256, CMiniBlockIndex*)& item, mapMiniBlockIndex)
       {
           CMiniBlockIndex* pindex = item.second;
-          vSortedByHeight.push_back(std::make_pair(pindex->nHeight, pindex));
+          if(pindex) vSortedByHeight.push_back(std::make_pair(pindex->nHeight, pindex));
       }
       if (!vSortedByHeight.empty()){
         sort(vSortedByHeight.begin(), vSortedByHeight.end());
