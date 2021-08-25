@@ -3134,6 +3134,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; // Don't cache results if we're actually connecting blocks (still consult the cache, though)
             if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL))
+                LogPrintf("%s - CheckInputs on %s failed with %s\n", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -3143,7 +3144,9 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
         if (i > 0) {
             blockundo.vtxundo.push_back(CTxUndo());
         }
+        LogPrintf("%s - UpdateCoins Before tx hash %s \n", __func__, tx.GetHash().ToString());
         UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
+        LogPrintf("%s - UpdateCoins After tx hash %s \n", __func__, tx.GetHash().ToString());
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
