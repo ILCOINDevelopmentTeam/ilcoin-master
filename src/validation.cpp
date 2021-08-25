@@ -3133,10 +3133,11 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; // Don't cache results if we're actually connecting blocks (still consult the cache, though)
-            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL))
+            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL)){
                 LogPrintf("%s - CheckInputs on %s failed with %s\n", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
+            }
             control.Add(vChecks);
         }
 
