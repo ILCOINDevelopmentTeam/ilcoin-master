@@ -3101,7 +3101,11 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
         if (!tx.IsCoinBase())
         {
-            if (!view.HaveInputs(tx)) continue;
+            if (!view.HaveInputs(tx)){
+                LogPrintf("%s - inputs missing/spent on %s", __func__, tx.GetHash().ToString());
+                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
+                                 REJECT_INVALID, "bad-txns-inputs-missingorspent");
+            }
 
             // Check that transaction is BIP68 final
             // BIP68 lock checks (as opposed to nLockTime checks) must
@@ -3135,7 +3139,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
             bool fCacheResults = fJustCheck; // Don't cache results if we're actually connecting blocks (still consult the cache, though)
             if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, txdata[i], nScriptCheckThreads ? &vChecks : NULL)){
                 LogPrintf("%s - CheckInputs on %s failed with %s\n", __func__, tx.GetHash().ToString(), FormatStateMessage(state));
-                return error("ConnectBlock(): CheckInputs on %s failed with %s",
+                return error("ConnectMiniBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             }
             control.Add(vChecks);
@@ -6305,7 +6309,7 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
 }
 bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock3> pblock, bool fForceProcessing, bool fNewBlock)
 {
-    LogPrintf("ProcessNewMiniBlock\n");
+    LogPrintf("%s\n", __func__);
     CBlockIndex *pprevindex = NULL;
     {
         CMiniBlockIndex *pminiindex = NULL;
@@ -6316,12 +6320,15 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         // Store to disk
         const CBlock3& miniblock = *pblock;
         miniblock.fChecked = true;
-        LogPrintf("AcceptMiniBlock(%s)\n", pblock->GetHash().ToString());
+        LogPrintf("%s - (%s)\n", __func__, pblock->GetHash().ToString());
         ret = AcceptMiniBlock(pblock, state, chainparams, &pminiindex, fForceProcessing, NULL, true);
-        if(!ret) return false;
+        if (!ret) {
+            GetMainSignals().BlockChecked3(*pblock, state);
+            return error("%s: AcceptMiniBlock FAILED", __func__);
+        }
 
         miniChainActive.SetTip(pminiindex);
-        LogPrintf("ProcessNewBlock AcceptMiniBlock() %s OK!\n", (ret?"true":"false"));
+        LogPrintf("%s - AcceptMiniBlock() %s OK!\n", __func__, (ret?"true":"false"));
 
         bool rv = true;
         pprevindex = pminiindex->pprev;
@@ -6330,21 +6337,26 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
         CCoinsViewCache view(pcoinsTip);
         rv = ConnectMiniBlock(miniblock, state, chainActive.Tip(), pminiindex, view, chainparams, false, fNewBlock);
         if (!rv) {
-            return error("ConnectTip(): ConnectMiniBlock %s failed", pminiindex->GetBlockHash().ToString());
+          LogPrintf("%s - ConnectTip(): ConnectMiniBlock %s failed", __func__, pminiindex->GetBlockHash().ToString());
+          return error("%s: ConnectTip(): ConnectMiniBlock %s failed", __func__, pminiindex->GetBlockHash().ToString());
         }
         bool flushed = view.Flush();
         assert(flushed);
-        LogPrintf("ProcessNewBlock ConnectBlock() %s OK!\n", (rv?"true":"false"));
+        LogPrintf("%s - ConnectBlock() %s view.Flush %s OK!\n", __func__, (rv?"true":"false"), (flushed?"true":"false"));
 
         // Write changes to disk, after new miniblock.
+        bool flushed2 = pcoinsTip->Flush();
+        assert(flushed2);
+        LogPrintf("%s - ConnectBlock() %s pcoinsTip->Flush() %s OK!\n", __func__, (rv?"true":"false"), (flushed2?"true":"false"));
+
         if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC)) {
             return false;
         }
-        LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
+        LogPrintf("%s - FlushStateToDisk() OK!\n", __func__);
 
         if(rv){
           mempool.removeForBlock(miniblock.vtx, chainActive.Tip()->nHeight);
-          LogPrintf("ProcessNewBlock removeForBlock() %d OK!\n", miniblock.vtx.size());
+          LogPrintf("%s - removeForBlock() %d OK!\n", __func__, miniblock.vtx.size());
 
           bool fBlocksDisconnected = true;
           if (fBlocksDisconnected) {
@@ -6357,11 +6369,11 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
 
           for (unsigned int i = 0; i < miniblock.vtx.size(); i++)
               GetMainSignals().SyncTransaction(*miniblock.vtx[i], pprevindex, i);
-          LogPrintf("ProcessNewBlock SyncTransaction() %d OK!\n", miniblock.vtx.size());
+          LogPrintf("%s - SyncTransaction() %d OK!\n", __func__, miniblock.vtx.size());
         }
 
         // Write changes to disk, after new miniblock.
-        LogPrintf("ProcessNewBlock FlushStateToDisk() OK!\n");
+        LogPrintf("%s - FlushStateToDisk() OK!\n", __func__);
 
         bool fInitialDownload = IsInitialBlockDownload();
         GetMainSignals().UpdatedMiniBlockTip(pminiindex, pminiindex->pminiprev, fInitialDownload);
