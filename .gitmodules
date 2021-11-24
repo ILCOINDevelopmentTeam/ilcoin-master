@@ -1,0 +1,3 @@
+[submodule "src/ivmone"]
+	path = src/ivmone
+	url = https://github.com/ILCOINDevelopmentTeam/ivmone
