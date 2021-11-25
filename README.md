@@ -19,7 +19,7 @@ in the blockchain, and in this way avoid every malicious activities. Also, we in
 
 [Original Whitepaper](https://ilcoincrypto.com/assets/img/docs/white-paper.pdf).
 
-[Build ILCOIN Source Code - Linux](https://ilcoincrypto.com/assets/img/docs/BuildILCoinSourceCode-Linux.pdf).
+[Build ILCOIN Source Code - Linux](https://ilcoincrypto.com/assets/img/docs/BuildILCoinSourceCode-IVM-Linux.pdf).
 
 License
 -------
