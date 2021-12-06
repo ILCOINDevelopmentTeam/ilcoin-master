@@ -159,6 +159,9 @@ bool CZMQPublishHashBlockNotifier::NotifyBlock(const CMiniBlockIndex *pindex)
     char data[32];
     for (unsigned int i = 0; i < 32; i++)
         data[31 - i] = hash.begin()[i];
+
+    // Execute the IVMONE Code with the smart contract hex.
+
     return SendMessage(MSG_HASHMINIBLOCK, data, 32);
 }
 
