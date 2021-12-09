@@ -1571,32 +1571,34 @@ void CheckForkWarningConditions()
     if (pindexBestForkTip && chainActive.Height() - pindexBestForkTip->nHeight >= 72)
         pindexBestForkTip = NULL;
 
-    if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 6)))
-    {
-        if (!GetfLargeWorkForkFound() && pindexBestForkBase)
-        {
-            std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
-                pindexBestForkBase->phashBlock->ToString() + std::string("'");
-            AlertNotify(warning);
-        }
-        if (pindexBestForkTip && pindexBestForkBase)
-        {
-            LogPrintf("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n", __func__,
-                   pindexBestForkBase->nHeight, pindexBestForkBase->phashBlock->ToString(),
-                   pindexBestForkTip->nHeight, pindexBestForkTip->phashBlock->ToString());
-            SetfLargeWorkForkFound(true);
-        }
-        else
-        {
-            LogPrintf("%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n", __func__);
-            SetfLargeWorkInvalidChainFound(true);
-        }
-    }
-    else
-    {
-        SetfLargeWorkForkFound(false);
-        SetfLargeWorkInvalidChainFound(false);
-    }
+    // if (pindexBestForkTip || (pindexBestInvalid && pindexBestInvalid->nChainWork > chainActive.Tip()->nChainWork + (GetBlockProof(*chainActive.Tip()) * 6)))
+    // {
+    //     if (!GetfLargeWorkForkFound() && pindexBestForkBase)
+    //     {
+    //         std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
+    //             pindexBestForkBase->phashBlock->ToString() + std::string("'");
+    //         AlertNotify(warning);
+    //     }
+    //     if (pindexBestForkTip && pindexBestForkBase)
+    //     {
+    //         LogPrintf("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n", __func__,
+    //                pindexBestForkBase->nHeight, pindexBestForkBase->phashBlock->ToString(),
+    //                pindexBestForkTip->nHeight, pindexBestForkTip->phashBlock->ToString());
+    //         SetfLargeWorkForkFound(true);
+    //     }
+    //     else
+    //     {
+    //         LogPrintf("%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n", __func__);
+    //         SetfLargeWorkInvalidChainFound(true);
+    //     }
+    // }
+    // else
+    // {
+    //     SetfLargeWorkForkFound(false);
+    //     SetfLargeWorkInvalidChainFound(false);
+    // }
+    SetfLargeWorkForkFound(false);
+    SetfLargeWorkInvalidChainFound(false);
 }
 
 void CheckForkWarningConditionsOnNewFork(CBlockIndex* pindexNewForkTip)
