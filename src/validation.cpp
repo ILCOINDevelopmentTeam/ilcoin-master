@@ -3194,8 +3194,8 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
 
-    if (!control.Wait())
-        return state.DoS(100, false);
+    // if (!control.Wait())
+    //     return state.DoS(100, false);
     int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
     LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
     LogPrintf("%s - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", __func__, nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
@@ -6368,7 +6368,7 @@ bool ProcessNewMiniBlock(const CChainParams& chainparams, const std::shared_ptr<
 
         CCoinsViewCache view(pcoinsTip);
         rv = ConnectMiniBlock(miniblock, state, chainActive.Tip(), pminiindex, view, chainparams, false, fNewBlock);
-        if (!rv) {
+        if (!rv) { // Connect error after replace smart contract data hex.
           LogPrintf("%s - ConnectTip(): ConnectMiniBlock %s failed", __func__, pminiindex->GetBlockHash().ToString());
           return error("%s: ConnectTip(): ConnectMiniBlock %s failed", __func__, pminiindex->GetBlockHash().ToString());
         }
