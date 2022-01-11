@@ -3128,6 +3128,14 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = *(block.vtx[i]);
+        const uint256 txhash = tx.GetHash();
+        bool checkScripts = true;
+
+        for (unsigned int k = 0; k < tx.vout.size(); k++) {
+            const CTxOut &out = tx.vout[k];
+            LogPrintf("%s: txdata hash(%s) out(%s)\n", __func__, tx.GetHash().ToString(), out.ToString());
+            if(out.nValue == 0) checkScripts = false;
+        }
 
         nInputs += tx.vin.size();
 
@@ -3174,7 +3182,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
                 return error("ConnectMiniBlock(): CheckInputs on %s failed with %s",
                     tx.GetHash().ToString(), FormatStateMessage(state));
             }
-            control.Add(vChecks);
+            if(checkScripts) control.Add(vChecks);
         }
 
         CTxUndo undoDummy;
@@ -3194,8 +3202,8 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
     CAmount blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
 
-    // if (!control.Wait())
-    //     return state.DoS(100, false);
+    if (!control.Wait())
+        return state.DoS(100, false);
     int64_t nTime4 = GetTimeMicros(); nTimeVerify += nTime4 - nTime2;
     LogPrint("bench", "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
     LogPrintf("%s - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", __func__, nInputs - 1, 0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs-1), nTimeVerify * 0.000001);
