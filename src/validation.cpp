@@ -11,6 +11,7 @@
 #include "consensus/consensus.h"
 #include "consensus/merkle.h"
 #include "consensus/validation.h"
+#include "core_io.h"
 #include "hash.h"
 #include "init.h"
 #include "policy/fees.h"
@@ -1166,8 +1167,6 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
                 return error("%s: pminiblocktree Deserialize or I/O error - %s", __func__, e.what());
             }
             hashBlock = header.GetHash();
-            if (txOut->GetHash() != hash)
-                return error("%s: pminiblocktree txid mismatch txOut->GetHash(%s) hash(%s)", __func__, txOut->GetHash().ToString(), hash.ToString());
             return true;
         }
         else if (pblocktree->ReadTxIndex(hash, postx)) {
@@ -3122,6 +3121,8 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
     CDiskTxPos pos(pminiindex->GetBlockPos(), ::GetSerializeSize(block.message, SER_DISK, CLIENT_VERSION) + ::GetSerializeSize(block.tracking, SER_DISK, CLIENT_VERSION) + GetSizeOfCompactSize(block.vtx.size()));
     std::vector<std::pair<uint256, CDiskTxPos> > vPos;
     vPos.reserve(block.vtx.size());
+    std::vector<std::pair<uint256, CDiskTxPos> > vPos2;
+    vPos2.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
@@ -3130,11 +3131,36 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
         const CTransaction &tx = *(block.vtx[i]);
         const uint256 txhash = tx.GetHash();
         bool checkScripts = true;
+        bool addRepIndex = false;
+        uint256 txidRepIndex;
 
         for (unsigned int k = 0; k < tx.vout.size(); k++) {
             const CTxOut &out = tx.vout[k];
-            LogPrintf("%s: txdata hash(%s) out(%s)\n", __func__, tx.GetHash().ToString(), out.ToString());
-            if(out.nValue == 0) checkScripts = false;
+            LogPrintf("%s: txdata hash(%s) out(%s)\n", __func__, tx.GetHash().ToString(), ScriptToAsmStr(out.scriptPubKey));
+
+            if(out.nValue == 0) {
+              checkScripts = false;
+              std::string _scriptAsmStr = ScriptToAsmStr(out.scriptPubKey);
+              _scriptAsmStr = _scriptAsmStr.substr(10, _scriptAsmStr.length()-10);
+
+              // Convert Asm String Hex to String.
+              std::string newString;
+              for(int i=0; i< _scriptAsmStr.length(); i+=2)
+              {
+                  std::string byte = _scriptAsmStr.substr(i,2);
+                  char chr = (char) (int)strtol(byte.c_str(), NULL, 16);
+                  newString.push_back(chr);
+              }
+
+              std::size_t found = newString.find("\"txid_replace\":\"");
+              std::string txidStr = found > 0 ? newString.substr(found+16, 64) : "";
+              txidRepIndex = txidStr != "" ? uint256S(txidStr) : uint256S("0x0");
+              if(!txidRepIndex.IsNull()) {
+                addRepIndex = true;
+                LogPrintf("%s: txdata hash(%s) found (%d) txidStr(%s) txidRepIndex(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), txidRepIndex.ToString(), found, txidStr, newString);
+              }
+
+            }
         }
 
         nInputs += tx.vin.size();
@@ -3194,6 +3220,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
         LogPrintf("%s - UpdateCoins After tx hash %s \n", __func__, tx.GetHash().ToString());
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
+        if(addRepIndex) vPos2.push_back(std::make_pair(txidRepIndex, pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
@@ -3230,9 +3257,12 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
         setDirtyBlockIndex.insert(pindex);
     }
 
-    if (fTxIndex)
-        if (!pminiblocktree->WriteTxIndex(vPos))
-            return AbortNode(state, "Failed to write transaction index");
+    if (fTxIndex){
+      if (!pminiblocktree->WriteTxIndex(vPos))
+          return AbortNode(state, "Failed to write transaction index");
+      if (!pminiblocktree->WriteTxIndex(vPos2))
+          return AbortNode(state, "Failed to write transaction replaced index");
+    }
 
     // add this block to the view's block chain
     view.SetBestBlock(pindex->GetBlockHash());
