@@ -22,6 +22,13 @@
 #include "txmempool.h"
 #include "uint256.h"
 #include "utilstrencodings.h"
+
+#include <iostream>
+#include "json.hpp"
+#include <iomanip>
+
+using json = nlohmann::json;
+
 #ifdef ENABLE_WALLET
 #include "wallet/rpcwallet.h"
 #include "wallet/wallet.h"
@@ -103,6 +110,113 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
         UniValue o(UniValue::VOBJ);
         ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
         out.push_back(Pair("scriptPubKey", o));
+        vout.push_back(out);
+    }
+    entry.push_back(Pair("vout", vout));
+
+    LogPrintf("hashBlock (hash): %s\n", hashBlock.ToString());
+    if (!hashBlock.IsNull()) {
+        entry.push_back(Pair("blockhash", hashBlock.GetHex()));
+        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
+        if (mi != mapBlockIndex.end() && (*mi).second) {
+            CBlockIndex* pindex = (*mi).second;
+            if (chainActive.Contains(pindex)) {
+                entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
+                entry.push_back(Pair("time", pindex->GetBlockTime()));
+                entry.push_back(Pair("blocktime", pindex->GetBlockTime()));
+            }
+            else
+                entry.push_back(Pair("confirmations", 0));
+        }
+        CMiniBlockIndex* pminiindex = FindMiniBlockIndex(hashBlock);
+        if (pminiindex) {
+            if (chainActive.Contains(pminiindex->pprev)) {
+                entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pminiindex->pprev->nHeight));
+                entry.push_back(Pair("time", pminiindex->pprev->GetBlockTime()));
+                entry.push_back(Pair("blocktime", pminiindex->pprev->GetBlockTime()));
+            }
+            else
+                entry.push_back(Pair("confirmations", 0));
+        }
+    }
+}
+
+void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniValue& entry)
+{
+    entry.push_back(Pair("txid", tx.GetHash().GetHex()));
+    entry.push_back(Pair("hash", tx.GetWitnessHash().GetHex()));
+    entry.push_back(Pair("size", (int)::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION)));
+    entry.push_back(Pair("vsize", (int)::GetVirtualTransactionSize(tx)));
+    entry.push_back(Pair("version", tx.nVersion));
+    entry.push_back(Pair("locktime", (int64_t)tx.nLockTime));
+
+    UniValue vin(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vin.size(); i++) {
+        const CTxIn& txin = tx.vin[i];
+        UniValue in(UniValue::VOBJ);
+        if (tx.IsCoinBase())
+            in.push_back(Pair("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+        else {
+            in.push_back(Pair("txid", txin.prevout.hash.GetHex()));
+            in.push_back(Pair("vout", (int64_t)txin.prevout.n));
+            UniValue o(UniValue::VOBJ);
+            o.push_back(Pair("asm", ScriptToAsmStr(txin.scriptSig, true)));
+            o.push_back(Pair("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end())));
+            in.push_back(Pair("scriptSig", o));
+        }
+        if (tx.HasWitness()) {
+                UniValue txinwitness(UniValue::VARR);
+                for (unsigned int j = 0; j < tx.vin[i].scriptWitness.stack.size(); j++) {
+                    std::vector<unsigned char> item = tx.vin[i].scriptWitness.stack[j];
+                    txinwitness.push_back(HexStr(item.begin(), item.end()));
+                }
+                in.push_back(Pair("txinwitness", txinwitness));
+        }
+        in.push_back(Pair("sequence", (int64_t)txin.nSequence));
+        vin.push_back(in);
+    }
+    entry.push_back(Pair("vin", vin));
+    UniValue vout(UniValue::VARR);
+    for (unsigned int i = 0; i < tx.vout.size(); i++) {
+        const CTxOut& txout = tx.vout[i];
+        UniValue out(UniValue::VOBJ);
+        out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
+        out.push_back(Pair("n", (int64_t)i));
+        UniValue o(UniValue::VOBJ);
+        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
+        out.push_back(Pair("scriptPubKey", o));
+
+        if(txout.nValue == 0) {
+          std::string _scriptAsmStr = ScriptToAsmStr(txout.scriptPubKey);
+          _scriptAsmStr = _scriptAsmStr.substr(10, _scriptAsmStr.length()-10);
+
+          // Convert Asm String Hex to String.
+          std::string newString;
+          for(unsigned int j=0; j< _scriptAsmStr.length(); j+=2)
+          {
+              std::string byte = _scriptAsmStr.substr(j,2);
+              char chr = (char) (int)strtol(byte.c_str(), NULL, 16);
+              newString.push_back(chr);
+          }
+          LogPrintf("%s: txdata hash(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), newString);
+
+          json smartcontract_json = json::parse(newString);
+
+          UniValue sc_out(UniValue::VOBJ);
+          sc_out.push_back(Pair("status", smartcontract_json.value("status", "")));
+          sc_out.push_back(Pair("message", smartcontract_json.value("message", "")));
+          sc_out.push_back(Pair("type", smartcontract_json.value("type", "")));
+          sc_out.push_back(Pair("owner", smartcontract_json.value("owner", "")));
+          sc_out.push_back(Pair("sign", smartcontract_json.value("sign", "")));
+          sc_out.push_back(Pair("date", smartcontract_json.value("date", (long)0)));
+          sc_out.push_back(Pair("txid", smartcontract_json.value("txid_replace", "")));
+          sc_out.push_back(Pair("object", smartcontract_json.value("object", "")));
+          sc_out.push_back(Pair("abi", smartcontract_json.value("abi", "")));
+          sc_out.push_back(Pair("function", smartcontract_json.value("function", "")));
+
+          out.push_back(Pair("smartcontract", sc_out));
+        }
+
         vout.push_back(out);
     }
     entry.push_back(Pair("vout", vout));
@@ -354,7 +468,7 @@ UniValue getrawsmartcontract(const JSONRPCRequest& request)
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hex", strHex));
-    TxToJSON(*tx, hashBlock, result);
+    SmartContractToJSON(*tx, hashBlock, result);
     return result;
 }
 
