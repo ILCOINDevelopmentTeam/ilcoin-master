@@ -151,6 +151,9 @@ static const int MAX_UNCONNECTING_HEADERS = 10;
 
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
 
+static const std::string ILC_SC_TYPE_CRE = "CREATE";
+static const std::string ILC_SC_TYPE_EXE = "EXECUTE";
+
 struct BlockHasher
 {
     size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
@@ -287,6 +290,7 @@ bool IsInitialBlockDownload();
 std::string GetWarnings(const std::string& strFor);
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
+bool GetSmartContract(const uint256 &hash, CTransactionRef &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
 /** Notify new miniblock header*/
 void NotifyHeaderMiniTip(int nHeight);
 /** Find the best known block, and make it the tip of the block chain */
@@ -592,6 +596,7 @@ extern CCoinsViewCache *pcoinsTip;
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
 extern CBlockTreeDB *pminiblocktree;
+extern CBlockTreeDB *psmartcontracttree;
 
 /**
  * Return the spend height, which is one more than the inputs.GetBestBlock().

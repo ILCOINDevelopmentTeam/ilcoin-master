@@ -234,6 +234,8 @@ void Shutdown()
         pblocktree = NULL;
         delete pminiblocktree;
         pminiblocktree = NULL;
+        delete psmartcontracttree;
+        psmartcontracttree = NULL;
     }
 #ifdef ENABLE_WALLET
     if (pwalletMain)
@@ -622,6 +624,7 @@ void ThreadImport(std::vector<boost::filesystem::path> vImportFiles)
         }
         pblocktree->WriteReindexing(false);
         pminiblocktree->WriteReindexing(false);
+        psmartcontracttree->WriteReindexing(false);
         fReindex = false;
         LogPrintf("Reindexing finished. Total Blocks Loaded: %d\n",totalLoaded);
         // To avoid ending up in a situation without genesis block, re-try initializing (no-op if reindexing worked):
@@ -1448,9 +1451,11 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 delete pcoinscatcher;
                 delete pblocktree;
                 delete pminiblocktree;
+                delete psmartcontracttree;
 
                 pblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex, GetDataDir() / "blocks" / "index");
                 pminiblocktree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex, GetDataDir() / "blocks" / "miniindex");
+                psmartcontracttree = new CBlockTreeDB(nBlockTreeDBCache, false, fReindex, GetDataDir() / "blocks" / "smartindex");
                 pcoinsdbview = new CCoinsViewDB(nCoinDBCache, false, fReindex || fReindexChainState);
                 pcoinscatcher = new CCoinsViewErrorCatcher(pcoinsdbview);
                 pcoinsTip = new CCoinsViewCache(pcoinscatcher);
@@ -1458,6 +1463,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                 if (fReindex) {
                     pblocktree->WriteReindexing(true);
                     pminiblocktree->WriteReindexing(true);
+                    psmartcontracttree->WriteReindexing(true);
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
                     if (fPruneMode)
                         CleanupBlockRevFiles();

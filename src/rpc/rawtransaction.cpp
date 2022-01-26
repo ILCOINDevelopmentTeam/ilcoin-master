@@ -246,6 +246,118 @@ UniValue getrawtransaction(const JSONRPCRequest& request)
     return result;
 }
 
+UniValue getrawsmartcontract(const JSONRPCRequest& request)
+{
+    if (request.fHelp || request.params.size() < 1 || request.params.size() > 2)
+        throw runtime_error(
+            "getrawsmartcontract \"txid\" ( verbose )\n"
+
+            "\nNOTE: By default this function only works for mempool transactions. If the -txindex option is\n"
+            "enabled, it also works for blockchain transactions.\n"
+            "DEPRECATED: for now, it also works for transactions with unspent outputs.\n"
+
+            "\nReturn the raw transaction data.\n"
+            "\nIf verbose is 'true', returns an Object with information about 'txid'.\n"
+            "If verbose is 'false' or omitted, returns a string that is serialized, hex-encoded data for 'txid'.\n"
+
+            "\nArguments:\n"
+            "1. \"txid\"      (string, required) The transaction id\n"
+            "2. verbose       (bool, optional, default=false) If true, return a string, other return a json object\n"
+
+            "\nResult (if verbose is not set or set to false):\n"
+            "\"data\"      (string) The serialized, hex-encoded data for 'txid'\n"
+
+            "\nResult (if verbose is set to true):\n"
+            "{\n"
+            "  \"hex\" : \"data\",       (string) The serialized, hex-encoded data for 'txid'\n"
+            "  \"txid\" : \"id\",        (string) The transaction id (same as provided)\n"
+            "  \"hash\" : \"id\",        (string) The transaction hash (differs from txid for witness transactions)\n"
+            "  \"size\" : n,             (numeric) The serialized transaction size\n"
+            "  \"vsize\" : n,            (numeric) The virtual transaction size (differs from size for witness transactions)\n"
+            "  \"version\" : n,          (numeric) The version\n"
+            "  \"locktime\" : ttt,       (numeric) The lock time\n"
+            "  \"vin\" : [               (array of json objects)\n"
+            "     {\n"
+            "       \"txid\": \"id\",    (string) The transaction id\n"
+            "       \"vout\": n,         (numeric) \n"
+            "       \"scriptSig\": {     (json object) The script\n"
+            "         \"asm\": \"asm\",  (string) asm\n"
+            "         \"hex\": \"hex\"   (string) hex\n"
+            "       },\n"
+            "       \"sequence\": n      (numeric) The script sequence number\n"
+            "       \"txinwitness\": [\"hex\", ...] (array of string) hex-encoded witness data (if any)\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"vout\" : [              (array of json objects)\n"
+            "     {\n"
+            "       \"value\" : x.xxx,            (numeric) The value in " + CURRENCY_UNIT + "\n"
+            "       \"n\" : n,                    (numeric) index\n"
+            "       \"scriptPubKey\" : {          (json object)\n"
+            "         \"asm\" : \"asm\",          (string) the asm\n"
+            "         \"hex\" : \"hex\",          (string) the hex\n"
+            "         \"reqSigs\" : n,            (numeric) The required sigs\n"
+            "         \"type\" : \"pubkeyhash\",  (string) The type, eg 'pubkeyhash'\n"
+            "         \"addresses\" : [           (json array of string)\n"
+            "           \"address\"        (string) ilcoin address\n"
+            "           ,...\n"
+            "         ]\n"
+            "       }\n"
+            "     }\n"
+            "     ,...\n"
+            "  ],\n"
+            "  \"blockhash\" : \"hash\",   (string) the block hash\n"
+            "  \"confirmations\" : n,      (numeric) The confirmations\n"
+            "  \"time\" : ttt,             (numeric) The transaction time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "  \"blocktime\" : ttt         (numeric) The block time in seconds since epoch (Jan 1 1970 GMT)\n"
+            "}\n"
+
+            "\nExamples:\n"
+            + HelpExampleCli("getrawsmartcontract", "\"mytxid\"")
+            + HelpExampleCli("getrawsmartcontract", "\"mytxid\" true")
+            + HelpExampleRpc("getrawsmartcontract", "\"mytxid\", true")
+        );
+
+    LOCK(cs_main);
+
+    uint256 hash = ParseHashV(request.params[0], "parameter 1");
+
+    // Accept either a bool (true) or a num (>=1) to indicate verbose output.
+    bool fVerbose = false;
+    if (request.params.size() > 1) {
+        if (request.params[1].isNum()) {
+            if (request.params[1].get_int() != 0) {
+                fVerbose = true;
+            }
+        }
+        else if(request.params[1].isBool()) {
+            if(request.params[1].isTrue()) {
+                fVerbose = true;
+            }
+        }
+        else {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid type provided. Verbose parameter must be a boolean.");
+        }
+    }
+
+    CTransactionRef tx;
+    uint256 hashBlock;
+    if (!GetSmartContract(hash, tx, Params().GetConsensus(), hashBlock, true))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, std::string(fTxIndex ? "No blockchain smart contract"
+            : "No blockchain smart contract. Use -txindex to enable blockchain smart contract queries") +
+            "");
+
+    string strHex = EncodeHexTx(*tx, RPCSerializationFlags());
+
+    if (!fVerbose)
+        return strHex;
+
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("hex", strHex));
+    TxToJSON(*tx, hashBlock, result);
+    return result;
+}
+
 UniValue gettxoutproof(const JSONRPCRequest& request)
 {
     if (request.fHelp || (request.params.size() != 1 && request.params.size() != 2))
@@ -989,6 +1101,7 @@ static const CRPCCommand commands[] =
 { //  category              name                      actor (function)         okSafeMode
   //  --------------------- ------------------------  -----------------------  ----------
     { "rawtransactions",    "getrawtransaction",      &getrawtransaction,      true,  {"txid","verbose"} },
+    { "rawtransactions",    "getrawsmartcontract",    &getrawsmartcontract,    true,  {"txid","verbose"} },
     { "rawtransactions",    "createrawtransaction",   &createrawtransaction,   true,  {"transactions","outputs","locktime"} },
     { "rawtransactions",    "decoderawtransaction",   &decoderawtransaction,   true,  {"hexstring"} },
     { "rawtransactions",    "decodescript",           &decodescript,           true,  {"hexstring"} },

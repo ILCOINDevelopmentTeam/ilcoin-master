@@ -87,6 +87,7 @@ static const CRPCConvertParam vRPCConvertParams[] =
     { "getminiblock2", 1, "verbose" },
     { "gettransaction", 1, "include_watchonly" },
     { "getrawtransaction", 1, "verbose" },
+    { "getrawsmartcontract", 1, "verbose" },
     { "createrawtransaction", 0, "transactions" },
     { "createrawtransaction", 1, "outputs" },
     { "createrawtransaction", 2, "locktime" },

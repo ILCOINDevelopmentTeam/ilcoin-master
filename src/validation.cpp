@@ -230,6 +230,7 @@ CMiniBlockIndex* FindForkInGlobalIndex(const CMiniChain& chain, const CBlockLoca
 CCoinsViewCache *pcoinsTip = NULL;
 CBlockTreeDB *pblocktree = NULL;
 CBlockTreeDB *pminiblocktree = NULL;
+CBlockTreeDB *psmartcontracttree = NULL;
 
 enum FlushStateMode {
     FLUSH_STATE_NONE,
@@ -1270,10 +1271,45 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     return false;
 }
 
+/** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
+bool GetSmartContract(const uint256 &hash, CTransactionRef &txOut, const Consensus::Params& consensusParams, uint256 &hashBlock, bool fAllowSlow)
+{
+    CBlockIndex *pindexSlow = NULL;
 
+    LOCK(cs_main);
 
+    CTransactionRef ptx = mempool.get(hash);
+    if (ptx)
+    {
+        txOut = ptx;
+        return true;
+    }
 
+    LogPrintf("%s fTxIndex=%d\n", __func__, (fTxIndex?"True":"False"));
+    if (fTxIndex) {
+        CDiskTxPos postx;
+        if (psmartcontracttree->ReadTxIndex(hash, postx)) {
+            CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
+            if (file.IsNull())
+                return error("%s: psmartcontracttree OpenBlockFile failed", __func__);
+            CBlockHeader header;
+            try {
+                file >> header;
+                fseek(file.Get(), postx.nTxOffset, SEEK_CUR);
+                LogPrintf("%s: psmartcontracttree header(%s)\n", __func__, header.GetHash().ToString());
+                file >> txOut;
+            } catch (const std::exception& e) {
+                return error("%s: psmartcontracttree Deserialize or I/O error - %s", __func__, e.what());
+            }
+            hashBlock = header.GetHash();
+            return true;
+        }
+    }
 
+    LogPrintf("%s pindexSlow=%d\n", __func__, pindexSlow);
+
+    return false;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -3123,6 +3159,8 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
     vPos.reserve(block.vtx.size());
     std::vector<std::pair<uint256, CDiskTxPos> > vPos2;
     vPos2.reserve(block.vtx.size());
+    std::vector<std::pair<uint256, CDiskTxPos> > vPos3;
+    vPos3.reserve(block.vtx.size());
     blockundo.vtxundo.reserve(block.vtx.size() - 1);
     std::vector<PrecomputedTransactionData> txdata;
     txdata.reserve(block.vtx.size()); // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
@@ -3130,8 +3168,9 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
     {
         const CTransaction &tx = *(block.vtx[i]);
         const uint256 txhash = tx.GetHash();
-        bool checkScripts = true;
-        bool addRepIndex = false;
+        bool checkScripts  = true;
+        bool addRepIndex   = false;
+        bool addSmartIndex = false;
         uint256 txidRepIndex;
 
         for (unsigned int k = 0; k < tx.vout.size(); k++) {
@@ -3155,9 +3194,18 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
               std::size_t found = newString.find("\"txid_replace\":\"");
               std::string txidStr = found > 0 ? newString.substr(found+16, 64) : "";
               txidRepIndex = txidStr != "" ? uint256S(txidStr) : uint256S("0x0");
+
+              std::size_t found2 = newString.find("\"type\":\"");
+              std::string txidStr2 = found2 > 0 ? newString.substr(found2+8, 6) : "";
+
               if(!txidRepIndex.IsNull()) {
                 addRepIndex = true;
-                LogPrintf("%s: txdata hash(%s) found (%d) txidStr(%s) txidRepIndex(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), txidRepIndex.ToString(), found, txidStr, newString);
+
+                if(txidStr2 == ILC_SC_TYPE_CRE){
+                  addSmartIndex = true;
+                }
+                LogPrintf("%s: txdata hash(%s) found(%d) txidStr(%s) txidRepIndex(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), found, txidStr, txidRepIndex.ToString(), newString);
+                LogPrintf("%s: txdata hash(%s) found2(%d) txidStr2(%s)\n", __func__, tx.GetHash().ToString(), found2, txidStr2);
               }
 
             }
@@ -3221,6 +3269,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         if(addRepIndex) vPos2.push_back(std::make_pair(txidRepIndex, pos));
+        if(addRepIndex && addSmartIndex) vPos3.push_back(std::make_pair(txidRepIndex, pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;
@@ -3262,6 +3311,8 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
           return AbortNode(state, "Failed to write transaction index");
       if (!pminiblocktree->WriteTxIndex(vPos2))
           return AbortNode(state, "Failed to write transaction replaced index");
+      if (!psmartcontracttree->WriteTxIndex(vPos3))
+          return AbortNode(state, "Failed to write transaction smart contract index");
     }
 
     // add this block to the view's block chain
@@ -3371,7 +3422,7 @@ bool static FlushStateToDisk(CValidationState &state, FlushStateMode mode, int n
                 setDirtyMiniBlockIndex.erase(it++);
             }
             if (!pminiblocktree->WriteBatchSync(vFiles, nLastBlockFile, vMiniBlocks)) {
-                return AbortNode(state, "Failed to write to block index database");
+                return AbortNode(state, "Failed to write to miniblock index database");
             }
         }
         // Finally remove any pruned files
@@ -7239,6 +7290,7 @@ bool InitBlockIndex(const CChainParams& chainparams)
     fTxIndex = GetBoolArg("-txindex", DEFAULT_TXINDEX);
     pblocktree->WriteFlag("txindex", fTxIndex);
     pminiblocktree->WriteFlag("txindex", fTxIndex);
+    psmartcontracttree->WriteFlag("txindex", fTxIndex);
     LogPrintf("Initializing databases...\n");
 
     // Only add the genesis block if not reindexing (in which case we reuse the one already on disk)
