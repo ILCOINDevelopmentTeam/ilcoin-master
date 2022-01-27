@@ -175,9 +175,10 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
         in.push_back(Pair("sequence", (int64_t)txin.nSequence));
         vin.push_back(in);
     }
+    entry.push_back(Pair("vin", vin));
+
     bool isSmartContract = false;
     std::string tx_data_str;
-    entry.push_back(Pair("vin", vin));
     UniValue vout(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
         const CTxOut& txout = tx.vout[i];
@@ -240,8 +241,7 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
                 entry.push_back(Pair("confirmations", 0));
         }
     }
-    if(isSmartContract)
-    {
+    if (isSmartContract) {
       json smartcontract_json = json::parse(tx_data_str);
 
       UniValue sc_out(UniValue::VOBJ);
