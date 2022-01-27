@@ -175,6 +175,8 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
         in.push_back(Pair("sequence", (int64_t)txin.nSequence));
         vin.push_back(in);
     }
+    bool isSmartContract = false;
+    std::string tx_data_str;
     entry.push_back(Pair("vin", vin));
     UniValue vout(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vout.size(); i++) {
@@ -191,30 +193,22 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
           _scriptAsmStr = _scriptAsmStr.substr(10, _scriptAsmStr.length()-10);
 
           // Convert Asm String Hex to String.
-          std::string newString;
           for(unsigned int j=0; j< _scriptAsmStr.length(); j+=2)
           {
               std::string byte = _scriptAsmStr.substr(j,2);
               char chr = (char) (int)strtol(byte.c_str(), NULL, 16);
-              newString.push_back(chr);
+              tx_data_str.push_back(chr);
           }
-          LogPrintf("%s: txdata hash(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), newString);
 
-          json smartcontract_json = json::parse(newString);
+          LogPrintf("%s: txdata hash(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), tx_data_str);
 
-          UniValue sc_out(UniValue::VOBJ);
-          sc_out.push_back(Pair("status", smartcontract_json.value("status", "")));
-          sc_out.push_back(Pair("message", smartcontract_json.value("message", "")));
-          sc_out.push_back(Pair("type", smartcontract_json.value("type", "")));
-          sc_out.push_back(Pair("owner", smartcontract_json.value("owner", "")));
-          sc_out.push_back(Pair("sign", smartcontract_json.value("sign", "")));
-          sc_out.push_back(Pair("date", smartcontract_json.value("date", (long)0)));
-          sc_out.push_back(Pair("txid", smartcontract_json.value("txid_replace", "")));
-          sc_out.push_back(Pair("object", smartcontract_json.value("object", "")));
-          sc_out.push_back(Pair("abi", smartcontract_json.value("abi", "")));
-          sc_out.push_back(Pair("function", smartcontract_json.value("function", "")));
+          tx_data_str = tx_data_str.find(ILC_SC_INIT_STR) >= 0 ? tx_data_str.substr(tx_data_str.find(ILC_SC_INIT_STR)+ILC_SC_INIT_STR.length()) : "";
+          LogPrintf("%s: after txdata hash(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), tx_data_str);
 
-          out.push_back(Pair("smartcontract", sc_out));
+          tx_data_str = tx_data_str.find(ILC_SC_END_STR) >= 0  ? tx_data_str.substr(0,tx_data_str.find(ILC_SC_END_STR)) : "";
+          LogPrintf("%s: after txdata hash(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), tx_data_str);
+
+          isSmartContract = tx_data_str != "";
         }
 
         vout.push_back(out);
@@ -245,6 +239,24 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
             else
                 entry.push_back(Pair("confirmations", 0));
         }
+    }
+    if(isSmartContract)
+    {
+      json smartcontract_json = json::parse(tx_data_str);
+
+      UniValue sc_out(UniValue::VOBJ);
+      sc_out.push_back(Pair("status", smartcontract_json.value("status", "")));
+      sc_out.push_back(Pair("message", smartcontract_json.value("message", "")));
+      sc_out.push_back(Pair("type", smartcontract_json.value("type", "")));
+      sc_out.push_back(Pair("owner", smartcontract_json.value("owner", "")));
+      sc_out.push_back(Pair("sign", smartcontract_json.value("sign", "")));
+      sc_out.push_back(Pair("date", smartcontract_json.value("date", (long)0)));
+      sc_out.push_back(Pair("txid", smartcontract_json.value("txid_replace", "")));
+      sc_out.push_back(Pair("object", smartcontract_json.value("object", "")));
+      sc_out.push_back(Pair("abi", smartcontract_json.value("abi", "")));
+      sc_out.push_back(Pair("function", smartcontract_json.value("function", "")));
+
+      entry.push_back(Pair("smartcontract", sc_out));
     }
 }
 

@@ -3183,28 +3183,31 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
               _scriptAsmStr = _scriptAsmStr.substr(10, _scriptAsmStr.length()-10);
 
               // Convert Asm String Hex to String.
-              std::string newString;
+              std::string tx_data_str;
               for(int i=0; i< _scriptAsmStr.length(); i+=2)
               {
                   std::string byte = _scriptAsmStr.substr(i,2);
                   char chr = (char) (int)strtol(byte.c_str(), NULL, 16);
-                  newString.push_back(chr);
+                  tx_data_str.push_back(chr);
               }
 
-              std::size_t found = newString.find("\"txid_replace\":\"");
-              std::string txidStr = found > 0 ? newString.substr(found+16, 64) : "";
+              std::size_t found = tx_data_str.find("\"txid_replace\":\"");
+              std::string txidStr = found > 0 ? tx_data_str.substr(found+16, 64) : "";
               txidRepIndex = txidStr != "" ? uint256S(txidStr) : uint256S("0x0");
 
-              std::size_t found2 = newString.find("\"type\":\"");
-              std::string txidStr2 = found2 > 0 ? newString.substr(found2+8, 6) : "";
+              std::size_t found2 = tx_data_str.find("\"type\":\"");
+              std::string txidStr2 = found2 > 0 ? tx_data_str.substr(found2+8, 6) : "";
 
-              if(!txidRepIndex.IsNull()) {
+              std::size_t found_sc_ini = tx_data_str.find(ILC_SC_INIT_STR);
+              std::size_t found_sc_end = tx_data_str.find(ILC_SC_END_STR);
+
+              if(found_sc_ini >= 0 && found_sc_end >= 0 && !txidRepIndex.IsNull()) {
                 addRepIndex = true;
 
                 if(txidStr2 == ILC_SC_TYPE_CRE){
                   addSmartIndex = true;
                 }
-                LogPrintf("%s: txdata hash(%s) found(%d) txidStr(%s) txidRepIndex(%s) newString(%s)\n", __func__, tx.GetHash().ToString(), found, txidStr, txidRepIndex.ToString(), newString);
+                LogPrintf("%s: txdata hash(%s) found(%d) txidStr(%s) txidRepIndex(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), found, txidStr, txidRepIndex.ToString(), tx_data_str);
                 LogPrintf("%s: txdata hash(%s) found2(%d) txidStr2(%s)\n", __func__, tx.GetHash().ToString(), found2, txidStr2);
               }
 

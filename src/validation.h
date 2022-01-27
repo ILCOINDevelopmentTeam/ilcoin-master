@@ -151,8 +151,15 @@ static const int MAX_UNCONNECTING_HEADERS = 10;
 
 static const bool DEFAULT_PEERBLOOMFILTERS = true;
 
-static const std::string ILC_SC_TYPE_CRE = "CREATE";
-static const std::string ILC_SC_TYPE_EXE = "EXECUTE";
+static const std::string ILC_SC_INIT_STR   = "ILCOIN_SMART_CONTRACT_INIT";
+static const std::string ILC_SC_END_STR    = "ILCOIN_SMART_CONTRACT_END";
+
+static const std::string ILC_SC_STATUS_INI = "0";
+static const std::string ILC_SC_STATUS_EXE = "1";
+static const std::string ILC_SC_STATUS_ERR = "2";
+
+static const std::string ILC_SC_TYPE_CRE   = "CREATE";
+static const std::string ILC_SC_TYPE_EXE   = "EXECUTE";
 
 struct BlockHasher
 {
