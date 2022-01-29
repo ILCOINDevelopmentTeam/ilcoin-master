@@ -3171,7 +3171,9 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
         bool checkScripts  = true;
         bool addRepIndex   = false;
         bool addSmartIndex = false;
+        bool repSmartIndex = false;
         uint256 txidRepIndex;
+        uint256 txidSmartRepIndex;
 
         for (unsigned int k = 0; k < tx.vout.size(); k++) {
             const CTxOut &out = tx.vout[k];
@@ -3198,17 +3200,29 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
               std::size_t found2 = tx_data_str.find("\"type\":\"");
               std::string txidStr2 = found2 > 0 ? tx_data_str.substr(found2+8, 6) : "";
 
+              std::size_t found3 = tx_data_str.find("\"txid_smart\":\"");
+              std::string txidStr3 = found3 > 0 ? tx_data_str.substr(found3+14, 64) : "";
+              txidSmartRepIndex = txidStr3 != "" ? uint256S(txidStr3) : uint256S("0x0");
+
+              std::size_t found4 = tx_data_str.find("\"status\":\"");
+              std::string txidStr4 = found4 > 0 ? tx_data_str.substr(found4+10, 1) : "";
+
               std::size_t found_sc_ini = tx_data_str.find(ILC_SC_INIT_STR);
               std::size_t found_sc_end = tx_data_str.find(ILC_SC_END_STR);
 
               if(found_sc_ini >= 0 && found_sc_end >= 0 && !txidRepIndex.IsNull()) {
                 addRepIndex = true;
 
-                if(txidStr2 == ILC_SC_TYPE_CRE){
+                if(txidStr2 == ILC_SC_TYPE_CRE && txidStr4 == ILC_SC_STATUS_EXE && !txidSmartRepIndex.IsNull()){
                   addSmartIndex = true;
                 }
-                LogPrintf("%s: txdata hash(%s) found(%d) txidStr(%s) txidRepIndex(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), found, txidStr, txidRepIndex.ToString(), tx_data_str);
+                else if(txidStr2 == ILC_SC_TYPE_EXE && txidStr4 == ILC_SC_STATUS_EXE && !txidSmartRepIndex.IsNull()){
+                  repSmartIndex = true;
+                }
+                LogPrintf("%s: txdata hash(%s) found(%d) txidStr(%s) txidRepIndex(%s) txidSmartRepIndex(%s) tx_data_str(%s)\n", __func__, tx.GetHash().ToString(), found, txidStr, txidRepIndex.ToString(), txidSmartRepIndex.ToString(), tx_data_str);
                 LogPrintf("%s: txdata hash(%s) found2(%d) txidStr2(%s)\n", __func__, tx.GetHash().ToString(), found2, txidStr2);
+                LogPrintf("%s: txdata hash(%s) found3(%d) txidStr3(%s)\n", __func__, tx.GetHash().ToString(), found3, txidStr3);
+                LogPrintf("%s: txdata hash(%s) found4(%d) txidStr4(%s)\n", __func__, tx.GetHash().ToString(), found4, txidStr4);
               }
 
             }
@@ -3272,7 +3286,7 @@ bool ConnectMiniBlock(const CBlock3& block, CValidationState& state, CBlockIndex
 
         vPos.push_back(std::make_pair(tx.GetHash(), pos));
         if(addRepIndex) vPos2.push_back(std::make_pair(txidRepIndex, pos));
-        if(addRepIndex && addSmartIndex) vPos3.push_back(std::make_pair(txidRepIndex, pos));
+        if(addRepIndex && (addSmartIndex || repSmartIndex)) vPos3.push_back(std::make_pair(txidSmartRepIndex, pos));
         pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64_t nTime3 = GetTimeMicros(); nTimeConnect += nTime3 - nTime2;

@@ -159,7 +159,7 @@ static const std::string ILC_SC_STATUS_EXE = "1";
 static const std::string ILC_SC_STATUS_ERR = "2";
 
 static const std::string ILC_SC_TYPE_CRE   = "CREATE";
-static const std::string ILC_SC_TYPE_EXE   = "EXECUTE";
+static const std::string ILC_SC_TYPE_EXE   = "EXECUT";
 
 struct BlockHasher
 {
