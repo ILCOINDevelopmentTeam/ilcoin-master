@@ -256,6 +256,7 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
       sc_out.push_back(Pair("abi", smartcontract_json.value("abi", "")));
       sc_out.push_back(Pair("function", smartcontract_json.value("function", "")));
       sc_out.push_back(Pair("storage", smartcontract_json.value("storage", "")));
+      sc_out.push_back(Pair("txid_list", smartcontract_json.value("txid_list", "")));
 
       entry.push_back(Pair("smartcontract", sc_out));
     }
