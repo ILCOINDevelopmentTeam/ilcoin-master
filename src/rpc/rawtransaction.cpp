@@ -249,6 +249,7 @@ void SmartContractToJSON(const CTransaction& tx, const uint256 hashBlock, UniVal
       sc_out.push_back(Pair("message", smartcontract_json.value("message", "")));
       sc_out.push_back(Pair("type", smartcontract_json.value("type", "")));
       sc_out.push_back(Pair("owner", smartcontract_json.value("owner", "")));
+      sc_out.push_back(Pair("address", smartcontract_json.value("address", "")));
       sc_out.push_back(Pair("sign", smartcontract_json.value("sign", "")));
       sc_out.push_back(Pair("date", smartcontract_json.value("date", (long)0)));
       sc_out.push_back(Pair("txid", smartcontract_json.value("txid_replace", "")));
