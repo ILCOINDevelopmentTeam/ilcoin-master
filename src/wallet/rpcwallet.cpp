@@ -144,8 +144,12 @@ UniValue getnewaddress(const JSONRPCRequest& request)
         throw JSONRPCError(RPC_WALLET_KEYPOOL_RAN_OUT, "Error: Keypool ran out, please call keypoolrefill first");
     }
     CKeyID keyID = newKey.GetID();
+    uint256 keyHash = newKey.GetHash();
 
     pwallet->SetAddressBook(keyID, strAccount, "receive");
+
+    LogPrintf("%s: ILC Address %s\n", __func__, CIlcoinAddress(keyID).ToString());
+    LogPrintf("%s: IVM Address %s\n", __func__, "0x"+keyHash.GetHex().substr(24,64));
 
     return CIlcoinAddress(keyID).ToString();
 }
@@ -1853,7 +1857,7 @@ UniValue gettransaction(const JSONRPCRequest& request)
             "      \"fee\": x.xxx,                     (numeric) The amount of the fee in " + CURRENCY_UNIT + ". This is negative and only available for the \n"
             "                                           'send' category of transactions.\n"
             "      \"abandoned\": xxx                  (bool) 'true' if the transaction has been abandoned (inputs are respendable). Only available for the \n"
-            "                                           'send' category of transactions.\n"			
+            "                                           'send' category of transactions.\n"
             "    }\n"
             "    ,...\n"
             "  ],\n"
